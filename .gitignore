@@ -1,0 +1,39 @@
+# Claude files - DO NOT COMMIT
+.claude/
+CLAUDE.md
+memory/
+
+# Backend
+backend/vendor/
+backend/.env
+backend/.env.backup
+backend/storage/logs/*.log
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/bootstrap/cache/
+backend/*.sqlite
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# IDE
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# Logs
+npm-debug.log*
+yarn-error.log*
