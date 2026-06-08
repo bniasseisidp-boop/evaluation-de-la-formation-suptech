@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/invitation/{token}', [AuthController::class, 'checkInvitation']);
 Route::get('/filieres/public', [FiliereController::class, 'index']);
 Route::get('/classes/public', [ClasseController::class, 'index']);
@@ -113,6 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // PDF Exports
         Route::get('/export/filiere/{id}', [ExportController::class, 'exportFiliere']);
         Route::get('/export/classe/{id}', [ExportController::class, 'exportClasse']);
+        Route::get('/export/student/{user}', [ExportController::class, 'exportStudent']);
 
         // Réinitialisation annuelle
         Route::delete('/admin/reset-evals', [AdminController::class, 'resetEvals']);

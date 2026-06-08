@@ -401,6 +401,14 @@ export default function LoginPage() {
               </AnimatePresence>
             </motion.div>
 
+            {/* Forgot password */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+              className="text-right -mt-1">
+              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700 text-xs font-medium transition-colors">
+                Mot de passe oublié ?
+              </Link>
+            </motion.div>
+
             {/* Submit */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
               <button type="submit" disabled={loading}

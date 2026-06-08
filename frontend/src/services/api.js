@@ -30,6 +30,8 @@ export const authAPI = {
   logout: () => api.post('/logout'),
   me: () => api.get('/me'),
   changePassword: (data) => api.post('/change-password', data),
+  forgotPassword: (data) => api.post('/forgot-password', data),
+  resetPassword: (data) => api.post('/reset-password', data),
   checkInvitation: (token) => api.get(`/invitation/${token}`),
 };
 
@@ -103,6 +105,8 @@ export const adminAPI = {
     .then(r => downloadBlob(r.data, `rapport_filiere_${id}.pdf`)),
   exportClasse: (id) => api.get(`/export/classe/${id}`, { responseType: 'blob' })
     .then(r => downloadBlob(r.data, `rapport_classe_${id}.pdf`)),
+  exportStudent: (id, name) => api.get(`/export/student/${id}`, { responseType: 'blob' })
+    .then(r => downloadBlob(r.data, `rapport_etudiant_${name || id}.pdf`)),
   resetEvals: () => api.delete('/admin/reset-evals'),
 };
 

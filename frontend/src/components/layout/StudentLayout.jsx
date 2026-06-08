@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Home, Star, Shield, BookOpen, CheckCircle, LogOut, Menu, X } from 'lucide-react';
+import { Home, Shield, BookOpen, CheckCircle, LogOut, Menu, X, UserCircle } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import useAuthStore from '../../store/authStore';
 import AIAssistant from '../ai/AIAssistant';
 
 const NAV = [
-  { to: '/portail',                 icon: Home,        label: 'Mon tableau de bord', exact: true },
+  { to: '/portail',                 icon: Home,        label: 'Tableau de bord',    exact: true },
   { to: '/portail/qualite',         icon: Shield,      label: 'Qualité de service' },
-  { to: '/portail/formation',       icon: BookOpen,    label: 'Évaluation formation' },
+  { to: '/portail/formation',       icon: BookOpen,    label: 'Éval. formation' },
   { to: '/portail/mes-evaluations', icon: CheckCircle, label: 'Mes évaluations' },
+  { to: '/portail/profil',          icon: UserCircle,  label: 'Mon profil' },
 ];
 
 export default function StudentLayout() {

@@ -99,6 +99,51 @@ class ExportController extends Controller
         return $pdf->download('rapport_' . $classe->nom . '_' . date('Y') . '.pdf');
     }
 
+    public function exportStudent(User $user)
+    {
+        $evalEns  = EvaluationEnseignement::with(['cmp.matiere', 'cmp.professeur', 'matiere'])
+            ->where('etudiant_id', $user->id)->get();
+        $evalQual = EvaluationQualiteService::where('etudiant_id', $user->id)->latest()->first();
+        $evalForm = EvaluationFormation::where('etudiant_id', $user->id)->latest()->first();
+
+        $user->load(['filiere', 'classe']);
+
+        $services = [
+            'secretariat'      => 'Secrétariat',
+            'direction'        => 'Direction',
+            'direction_etudes' => 'Direction des études',
+            'documentation'    => 'La Documentation',
+            'salle_pratique'   => 'La salle pratique',
+            'connexion'        => 'La connexion internet',
+            'securite'         => 'La sécurité',
+            'toilettes'        => 'Les toilettes',
+            'restaurant'       => 'Le Restaurant',
+            'cadre_general'    => 'Le cadre général',
+        ];
+
+        $niveauxLabels = [
+            'tres_satisfait' => 'Très satisfait',
+            'satisfait'      => 'Satisfait',
+            'peu_satisfait'  => 'Peu satisfait',
+            'pas_satisfait'  => 'Pas satisfait',
+            'pas_du_tout'    => 'Pas du tout',
+        ];
+
+        $pdf = Pdf::loadView('pdf.rapport_etudiant', [
+            'student'       => $user,
+            'evalEns'       => $evalEns,
+            'evalQual'      => $evalQual,
+            'evalForm'      => $evalForm,
+            'services'      => $services,
+            'niveauxLabels' => $niveauxLabels,
+            'annee'         => '2025-2026',
+            'generated'     => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        $name = preg_replace('/[^a-z0-9]/i', '_', $user->name);
+        return $pdf->download("rapport_etudiant_{$name}.pdf");
+    }
+
     private function buildStats($evals, string $matiere, string $prof): array
     {
         $count = $evals->count();

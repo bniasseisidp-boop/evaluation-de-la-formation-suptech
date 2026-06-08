@@ -130,12 +130,12 @@ export default function EvalQualite() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
           className="bg-white rounded-xl border border-slate-100 p-5">
           <p className="font-bold text-slate-800 mb-4">Je suis satisfait(e) et je recommanderais SUPTECH :</p>
-          <div className="flex gap-4">
-            {[{v: '1', l: '✅ OUI', c: 'text-green-700 bg-green-50 border-green-300'},{v: '0', l: '❌ NON', c: 'text-red-700 bg-red-50 border-red-300'}].map(opt => (
+          <div className="grid grid-cols-2 gap-3">
+            {[{v: '1', l: 'OUI', c: 'text-green-700 bg-green-50 border-green-300'},{v: '0', l: 'NON', c: 'text-red-700 bg-red-50 border-red-300'}].map(opt => (
               <label key={opt.v}
-                className={`flex-1 flex items-center justify-center py-4 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all ${values.recommande === opt.v ? opt.c : 'border-slate-200 hover:bg-slate-50'}`}>
+                className={`flex items-center justify-center py-3 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all min-w-0 ${values.recommande === opt.v ? opt.c : 'border-slate-200 hover:bg-slate-50'}`}>
                 <input type="radio" {...register('recommande')} value={opt.v} className="sr-only" />
-                {opt.l}
+                {opt.v === '1' ? '✅' : '❌'}&nbsp;{opt.l}
               </label>
             ))}
           </div>

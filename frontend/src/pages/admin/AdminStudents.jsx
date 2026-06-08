@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Search, X, BookOpen, Shield, Star, Mail, GraduationCap, Hash, Calendar, MessageSquare, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import { Users, Search, X, BookOpen, Shield, Star, Mail, GraduationCap, Hash, Calendar, MessageSquare, CheckCircle, Trash2, FileDown } from 'lucide-react';
 import { adminAPI, filiereAPI, classeAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
 function StudentDetail({ student, onClose, onDelete }) {
@@ -62,6 +63,10 @@ function StudentDetail({ student, onClose, onDelete }) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => { toast.promise(adminAPI.exportStudent(s.id, s.name), { loading: 'Génération PDF...', success: 'PDF téléchargé !', error: 'Erreur PDF' }); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition-colors">
+              <FileDown className="w-3.5 h-3.5" />PDF
+            </button>
             <button onClick={handleDelete} disabled={deleting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors disabled:opacity-50">
               <Trash2 className="w-3.5 h-3.5" />Supprimer
@@ -179,8 +184,8 @@ function StudentDetail({ student, onClose, onDelete }) {
                               <div key={i} className="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <div className="flex items-center justify-between mb-1">
                                   <div>
-                                    <span className="text-slate-900 text-xs font-semibold">{e.cmp?.matiere?.nom}</span>
-                                    <span className="text-slate-400 text-xs ml-2">• {e.cmp?.professeur?.prenom} {e.cmp?.professeur?.nom}</span>
+                                    <span className="text-slate-900 text-xs font-semibold">{e.matiere?.nom || e.cmp?.matiere?.nom || '—'}</span>
+                                    <span className="text-slate-400 text-xs ml-2">{e.cmp?.professeur ? `• ${e.cmp.professeur.prenom} ${e.cmp.professeur.nom}` : ''}</span>
                                   </div>
                                   <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${e.score_total >= 75 ? 'text-green-700 bg-green-100' : e.score_total >= 50 ? 'text-amber-700 bg-amber-100' : 'text-red-700 bg-red-100'}`}>
                                     {e.score_total}%

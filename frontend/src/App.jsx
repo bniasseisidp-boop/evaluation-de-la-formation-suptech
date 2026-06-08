@@ -5,6 +5,8 @@ import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminFilieres from './pages/admin/AdminFilieres';
 import AdminClasses from './pages/admin/AdminClasses';
@@ -19,6 +21,7 @@ import EvalEnseignement from './pages/student/EvalEnseignement';
 import EvalQualite from './pages/student/EvalQualite';
 import EvalFormation from './pages/student/EvalFormation';
 import MesEvaluations from './pages/student/MesEvaluations';
+import MonProfil from './pages/student/MonProfil';
 import AdminLayout from './components/layout/AdminLayout';
 import StudentLayout from './components/layout/StudentLayout';
 
@@ -67,6 +70,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/admin" element={<PrivateRoute role="admin"><AdminLayout /></PrivateRoute>}>
           <Route index element={<ErrorBoundary><AdminDashboard /></ErrorBoundary>} />
@@ -86,6 +91,7 @@ export default function App() {
           <Route path="qualite"        element={<EvalQualite />} />
           <Route path="formation"      element={<EvalFormation />} />
           <Route path="mes-evaluations" element={<MesEvaluations />} />
+          <Route path="profil"          element={<MonProfil />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

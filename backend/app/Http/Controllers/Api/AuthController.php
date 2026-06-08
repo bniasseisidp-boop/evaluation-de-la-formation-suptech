@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -70,6 +73,60 @@ class AuthController extends Controller
         $user->update(['password' => Hash::make($request->password)]);
 
         return response()->json(['message' => 'Mot de passe modifié avec succès.']);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            $token = Str::random(64);
+            DB::table('password_resets')->updateOrInsert(
+                ['email' => $request->email],
+                ['token' => Hash::make($token), 'created_at' => now()]
+            );
+            $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
+            try {
+                Mail::send('emails.reset_password', ['user' => $user, 'resetUrl' => $resetUrl], function ($m) use ($user) {
+                    $m->to($user->email, $user->name)->subject('Réinitialisation de mot de passe — ISI SUPTECH');
+                });
+            } catch (\Exception $e) {}
+        }
+
+        return response()->json(['message' => 'Si cet email existe, un lien de réinitialisation a été envoyé.']);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token'    => 'required|string',
+            'email'    => 'required|email',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $reset = DB::table('password_resets')->where('email', $request->email)->first();
+
+        if (!$reset || !Hash::check($request->token, $reset->token)) {
+            return response()->json(['message' => 'Lien invalide ou expiré.'], 422);
+        }
+
+        if (now()->diffInMinutes($reset->created_at) > 60) {
+            DB::table('password_resets')->where('email', $request->email)->delete();
+            return response()->json(['message' => 'Ce lien a expiré. Veuillez en demander un nouveau.'], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'Utilisateur introuvable.'], 404);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+        $user->tokens()->delete();
+        DB::table('password_resets')->where('email', $request->email)->delete();
+
+        return response()->json(['message' => 'Mot de passe réinitialisé avec succès.']);
     }
 
     public function checkInvitation(string $token)
