@@ -82,12 +82,12 @@
       </div>
 
       <div class="btn-wrap">
-        <a href="{{ env('FRONTEND_URL') }}/login" class="btn">Accéder à la plateforme</a>
+        <a href="{{ config('app.frontend_url') }}/login" class="btn">Accéder à la plateforme</a>
       </div>
 
       <div class="link-box">
         Ou copiez ce lien dans votre navigateur :<br>
-        {{ env('FRONTEND_URL') }}/login
+        {{ config('app.frontend_url') }}/login
       </div>
     </div>
 
