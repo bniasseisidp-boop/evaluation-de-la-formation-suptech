@@ -17,10 +17,10 @@ class AdminSeeder extends Seeder
     {
         // Admin user
         User::updateOrCreate(
-            ['email' => 'admin@isi-suptech.sn'],
+            ['email' => 'bniasseisidp@groupeisi.com'],
             [
                 'name'      => 'Administrateur ISI',
-                'password'  => Hash::make('Admin@2025'),
+                'password'  => Hash::make('FatouLalla1976!'),
                 'role'      => 'admin',
                 'is_active' => true,
             ]

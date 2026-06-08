@@ -7,6 +7,7 @@ use App\Models\ClasseMatiereProf;
 use App\Models\EvaluationEnseignement;
 use App\Models\EvaluationFormation;
 use App\Models\EvaluationQualiteService;
+use App\Models\Matiere;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -16,33 +17,70 @@ class StudentController extends Controller
     {
         $user = $request->user()->load(['filiere', 'classe']);
 
+        // 1. Chercher les CMPs associés à la classe de l'étudiant
         $cmpsInClasse = ClasseMatiereProf::with(['matiere', 'professeur'])
             ->where('classe_id', $user->classe_id)
             ->get();
 
-        $evalIds = EvaluationEnseignement::where('etudiant_id', $user->id)
-            ->pluck('cmp_id')->toArray();
+        // 2. Si aucun CMP configuré → utiliser toutes les matières du système
+        //    comme "matières virtuelles" à évaluer (sans professeur)
+        $useDirectMatieres = $cmpsInClasse->isEmpty();
+        if ($useDirectMatieres) {
+            $matieres = Matiere::orderBy('nom')->get();
+            // Transformer en objets compatibles avec le format CMP
+            $cmpsInClasse = $matieres->map(function ($m) {
+                return (object)[
+                    'id'          => 'mat_' . $m->id,
+                    'matiere_id'  => $m->id,
+                    'matiere'     => $m,
+                    'professeur'  => null,
+                    'classe_id'   => null,
+                    'is_virtual'  => true,
+                ];
+            });
+        }
 
-        $evalQualite = EvaluationQualiteService::where('etudiant_id', $user->id)->exists();
+        // 3. Évaluations déjà faites par cet étudiant
+        $evalCmpIds    = EvaluationEnseignement::where('etudiant_id', $user->id)->pluck('cmp_id')->filter()->toArray();
+        $evalMatIds    = EvaluationEnseignement::where('etudiant_id', $user->id)->pluck('matiere_id')->filter()->toArray();
+
+        $evalQualite   = EvaluationQualiteService::where('etudiant_id', $user->id)->exists();
         $evalFormation = EvaluationFormation::where('etudiant_id', $user->id)->count();
 
-        $totalMatieres = $cmpsInClasse->count();
-        $matieresEvaluees = count(array_intersect($cmpsInClasse->pluck('id')->toArray(), $evalIds));
+        $totalMatieres   = $cmpsInClasse->count();
+
+        $matieresEvalueesCount = $cmpsInClasse->filter(function ($c) use ($evalCmpIds, $evalMatIds, $useDirectMatieres) {
+            if ($useDirectMatieres) {
+                return in_array($c->matiere_id, $evalMatIds);
+            }
+            return in_array($c->id, $evalCmpIds);
+        })->count();
+
+        $matieresAEvaluer = $cmpsInClasse->filter(function ($c) use ($evalCmpIds, $evalMatIds, $useDirectMatieres) {
+            if ($useDirectMatieres) {
+                return !in_array($c->matiere_id, $evalMatIds);
+            }
+            return !in_array($c->id, $evalCmpIds);
+        })->values();
+
+        $matieresEvaluees = $cmpsInClasse->filter(function ($c) use ($evalCmpIds, $evalMatIds, $useDirectMatieres) {
+            if ($useDirectMatieres) {
+                return in_array($c->matiere_id, $evalMatIds);
+            }
+            return in_array($c->id, $evalCmpIds);
+        })->values();
 
         return response()->json([
-            'user'               => $user,
-            'stats'              => [
-                'total_matieres'     => $totalMatieres,
-                'matieres_evaluees'  => $matieresEvaluees,
-                'eval_qualite_done'  => $evalQualite,
+            'user'  => $user,
+            'stats' => [
+                'total_matieres'       => $totalMatieres,
+                'matieres_evaluees'    => $matieresEvalueesCount,
+                'eval_qualite_done'    => $evalQualite,
                 'eval_formation_count' => $evalFormation,
+                'mode_virtuel'         => $useDirectMatieres,
             ],
-            'matieres_a_evaluer' => $cmpsInClasse->filter(
-                fn($c) => !in_array($c->id, $evalIds)
-            )->values(),
-            'matieres_evaluees'  => $cmpsInClasse->filter(
-                fn($c) => in_array($c->id, $evalIds)
-            )->values(),
+            'matieres_a_evaluer' => $matieresAEvaluer,
+            'matieres_evaluees'  => $matieresEvaluees,
         ]);
     }
 
@@ -67,11 +105,11 @@ class StudentController extends Controller
                 : 0;
 
             $student->evaluation_stats = [
-                'nb_eval_enseignement' => $evalEns,
-                'eval_qualite_done'    => $evalQual,
-                'nb_eval_formation'    => $evalForm,
-                'total_matieres'       => $cmpsInClasse,
-                'taux_participation'   => $cmpsInClasse > 0
+                'enseignement'       => $evalEns,
+                'qualite'            => $evalQual ? 1 : 0,
+                'formation'          => $evalForm,
+                'total_matieres'     => $cmpsInClasse,
+                'taux_participation' => $cmpsInClasse > 0
                     ? round($evalEns / $cmpsInClasse * 100, 1) : 0,
             ];
             return $student;
@@ -82,16 +120,29 @@ class StudentController extends Controller
 
     public function show(User $user)
     {
-        $evalEns = EvaluationEnseignement::with(['cmp.matiere', 'cmp.professeur'])
+        $evalEns  = EvaluationEnseignement::with(['cmp.matiere', 'cmp.professeur', 'matiere'])
             ->where('etudiant_id', $user->id)->get();
         $evalQual = EvaluationQualiteService::where('etudiant_id', $user->id)->latest()->first();
         $evalForm = EvaluationFormation::where('etudiant_id', $user->id)->get();
 
         return response()->json([
-            'student'               => $user->load(['filiere', 'classe']),
+            'student'                  => $user->load(['filiere', 'classe']),
             'evaluations_enseignement' => $evalEns,
-            'evaluation_qualite'    => $evalQual,
-            'evaluations_formation' => $evalForm,
+            'evaluation_qualite'       => $evalQual,
+            'evaluations_formation'    => $evalForm,
         ]);
+    }
+
+    public function destroy(User $user)
+    {
+        if ($user->role !== 'student') {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+        EvaluationEnseignement::where('etudiant_id', $user->id)->delete();
+        EvaluationQualiteService::where('etudiant_id', $user->id)->delete();
+        EvaluationFormation::where('etudiant_id', $user->id)->delete();
+        $user->tokens()->delete();
+        $user->delete();
+        return response()->json(['message' => 'Étudiant supprimé avec succès.']);
     }
 }

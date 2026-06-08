@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Matiere;
 
 class EvaluationEnseignement extends Model
 {
     use HasFactory;
 
+    protected $table = 'evaluations_enseignement';
+
     protected $fillable = [
-        'etudiant_id', 'cmp_id',
+        'etudiant_id', 'cmp_id', 'matiere_id',
         'q1','q2','q3','q4','q5','q6','q7','q8','q9','q10',
         'commentaire', 'score_total',
     ];
@@ -25,6 +28,11 @@ class EvaluationEnseignement extends Model
     public function cmp()
     {
         return $this->belongsTo(ClasseMatiereProf::class, 'cmp_id');
+    }
+
+    public function matiere()
+    {
+        return $this->belongsTo(Matiere::class, 'matiere_id');
     }
 
     public static function scoreFromLetter(string $letter): float

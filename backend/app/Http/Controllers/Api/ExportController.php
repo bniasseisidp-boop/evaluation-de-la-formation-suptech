@@ -8,6 +8,7 @@ use App\Models\EvaluationEnseignement;
 use App\Models\EvaluationFormation;
 use App\Models\EvaluationQualiteService;
 use App\Models\Filiere;
+use App\Models\Matiere;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -22,53 +23,40 @@ class ExportController extends Controller
             'classes.etudiants',
         ])->findOrFail($filiereId);
 
-        $etudiantIds = User::where('filiere_id', $filiereId)
-            ->where('role', 'student')->pluck('id');
+        $classesData = $filiere->classes->map(function ($classe) {
+            $etudiantIds = $classe->etudiants->pluck('id');
+            $cmps        = $classe->classeMatiereProfs;
 
-        $evalQualite  = EvaluationQualiteService::whereIn('etudiant_id', $etudiantIds)->get();
-        $evalFormation = EvaluationFormation::whereIn('etudiant_id', $etudiantIds)->get();
+            if ($cmps->isEmpty()) {
+                $matieresList = Matiere::orderBy('nom')->get()->map(function ($m) use ($etudiantIds) {
+                    $evals = EvaluationEnseignement::whereNull('cmp_id')
+                        ->where('matiere_id', $m->id)
+                        ->whereIn('etudiant_id', $etudiantIds)->get();
+                    return $this->buildStats($evals, $m->nom, '—');
+                });
+            } else {
+                $matieresList = $cmps->map(function ($cmp) use ($etudiantIds) {
+                    $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
+                        ->whereIn('etudiant_id', $etudiantIds)->get();
+                    $prof = trim(($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? '')) ?: '—';
+                    return $this->buildStats($evals, $cmp->matiere->nom ?? '—', $prof);
+                });
+            }
 
-        $classesData = $filiere->classes->map(function ($classe) use ($etudiantIds) {
-            $cmpData = $classe->classeMatiereProfs->map(function ($cmp) use ($etudiantIds) {
-                $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
-                    ->whereIn('etudiant_id', $etudiantIds)->get();
-                $count = $evals->count();
-                $questions = [];
-                foreach (range(1, 10) as $i) {
-                    $q = "q$i";
-                    $questions["q$i"] = [
-                        'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100) : 0,
-                        'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100) : 0,
-                        'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100) : 0,
-                    ];
-                }
-                $scores = $evals->pluck('score_total')->filter();
-                return [
-                    'matiere'      => $cmp->matiere->nom ?? '—',
-                    'professeur'   => ($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? ''),
-                    'nb_reponses'  => $count,
-                    'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
-                    'questions'    => $questions,
-                    'commentaires' => $evals->pluck('commentaire')->filter()->values()->toArray(),
-                ];
-            });
             return [
                 'nom'      => $classe->nom,
                 'niveau'   => $classe->niveau,
-                'effectif' => $classe->etudiants->count(),
-                'matieres' => $cmpData->toArray(),
+                'effectif' => $etudiantIds->count(),
+                'matieres' => $matieresList->values()->toArray(),
             ];
         });
 
-        $data = [
+        $pdf = Pdf::loadView('pdf.rapport_filiere', [
             'filiere'   => $filiere,
             'classes'   => $classesData,
             'annee'     => '2025-2026',
             'generated' => now()->format('d/m/Y H:i'),
-        ];
-
-        $pdf = Pdf::loadView('pdf.rapport_filiere', $data)
-            ->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'portrait');
 
         return $pdf->download('rapport_' . $filiere->code . '_' . date('Y') . '.pdf');
     }
@@ -83,40 +71,54 @@ class ExportController extends Controller
         ])->findOrFail($classeId);
 
         $etudiantIds = $classe->etudiants->pluck('id');
+        $cmps        = $classe->classeMatiereProfs;
 
-        $matieres = $classe->classeMatiereProfs->map(function ($cmp) use ($etudiantIds) {
-            $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
-                ->whereIn('etudiant_id', $etudiantIds)->get();
-            $count = $evals->count();
+        if ($cmps->isEmpty()) {
+            $matieresList = Matiere::orderBy('nom')->get()->map(function ($m) use ($etudiantIds) {
+                $evals = EvaluationEnseignement::whereNull('cmp_id')
+                    ->where('matiere_id', $m->id)
+                    ->whereIn('etudiant_id', $etudiantIds)->get();
+                return $this->buildStats($evals, $m->nom, '—');
+            });
+        } else {
+            $matieresList = $cmps->map(function ($cmp) use ($etudiantIds) {
+                $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
+                    ->whereIn('etudiant_id', $etudiantIds)->get();
+                $prof = trim(($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? '')) ?: '—';
+                return $this->buildStats($evals, $cmp->matiere->nom ?? '—', $prof);
+            });
+        }
 
-            $questions = [];
-            foreach (range(1, 10) as $i) {
-                $q = "q$i";
-                $questions["q$i"] = [
-                    'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100) : 0,
-                    'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100) : 0,
-                    'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100) : 0,
-                ];
-            }
-            $scores = $evals->pluck('score_total')->filter();
-            return [
-                'matiere'      => $cmp->matiere->nom ?? '—',
-                'professeur'   => ($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? ''),
-                'nb_reponses'  => $count,
-                'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
-                'questions'    => $questions,
-                'commentaires' => $evals->pluck('commentaire')->filter()->values()->toArray(),
-            ];
-        });
-
-        $data = [
+        $pdf = Pdf::loadView('pdf.rapport_classe', [
             'classe'    => $classe,
-            'matieres'  => $matieres,
+            'matieres'  => $matieresList->values()->toArray(),
             'annee'     => '2025-2026',
             'generated' => now()->format('d/m/Y H:i'),
-        ];
+        ])->setPaper('a4', 'landscape');
 
-        $pdf = Pdf::loadView('pdf.rapport_classe', $data)->setPaper('a4', 'landscape');
         return $pdf->download('rapport_' . $classe->nom . '_' . date('Y') . '.pdf');
+    }
+
+    private function buildStats($evals, string $matiere, string $prof): array
+    {
+        $count = $evals->count();
+        $questions = [];
+        foreach (range(1, 10) as $i) {
+            $q = "q$i";
+            $questions["q$i"] = [
+                'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100) : 0,
+                'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100) : 0,
+                'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100) : 0,
+            ];
+        }
+        $scores = $evals->pluck('score_total')->filter();
+        return [
+            'matiere'      => $matiere,
+            'professeur'   => $prof,
+            'nb_reponses'  => $count,
+            'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
+            'questions'    => $questions,
+            'commentaires' => $evals->pluck('commentaire')->filter()->values()->toArray(),
+        ];
     }
 }

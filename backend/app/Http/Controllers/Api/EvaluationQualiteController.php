@@ -24,17 +24,8 @@ class EvaluationQualiteController extends Controller
 
     public function store(Request $request)
     {
-        $annee = '2025-2026';
+        $annee      = '2025-2026';
         $etudiantId = $request->user()->id;
-
-        $existing = EvaluationQualiteService::where([
-            'etudiant_id'    => $etudiantId,
-            'annee_scolaire' => $annee,
-        ])->first();
-
-        if ($existing) {
-            return response()->json(['message' => 'Vous avez déjà rempli ce questionnaire cette année.'], 422);
-        }
 
         $data = $request->validate([
             'secretariat'      => 'nullable|in:tres_satisfait,satisfait,peu_satisfait,pas_satisfait,pas_du_tout',
@@ -51,10 +42,12 @@ class EvaluationQualiteController extends Controller
             'commentaire'      => 'nullable|string|max:1000',
         ]);
 
-        $data['etudiant_id']    = $etudiantId;
-        $data['annee_scolaire'] = $annee;
+        // updateOrCreate → l'étudiant peut modifier sa réponse
+        $eval = EvaluationQualiteService::updateOrCreate(
+            ['etudiant_id' => $etudiantId, 'annee_scolaire' => $annee],
+            $data
+        );
 
-        $eval = EvaluationQualiteService::create($data);
         return response()->json($eval, 201);
     }
 

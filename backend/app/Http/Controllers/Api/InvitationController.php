@@ -16,7 +16,7 @@ class InvitationController extends Controller
     public function index()
     {
         $invitations = Invitation::with(['filiere', 'classe', 'createdBy'])
-            ->latest()->paginate(20);
+            ->latest()->get();
         return response()->json($invitations);
     }
 
@@ -24,7 +24,7 @@ class InvitationController extends Controller
     {
         $request->validate([
             'email'      => 'required|email',
-            'nom'        => 'required|string|max:100',
+            'nom'        => 'nullable|string|max:100',
             'filiere_id' => 'required|exists:filieres,id',
             'classe_id'  => 'required|exists:classes,id',
             'matricule'  => 'nullable|string|max:50',
@@ -36,7 +36,7 @@ class InvitationController extends Controller
         $user = User::updateOrCreate(
             ['email' => $request->email],
             [
-                'name'       => $request->nom,
+                'name'       => $request->nom ?? explode('@', $request->email)[0],
                 'password'   => Hash::make($tempPassword),
                 'role'       => 'student',
                 'filiere_id' => $request->filiere_id,
@@ -49,7 +49,7 @@ class InvitationController extends Controller
         $invitation = Invitation::create([
             'email'      => $request->email,
             'token'      => $token,
-            'nom'        => $request->nom,
+            'nom'        => $request->nom ?? explode('@', $request->email)[0],
             'filiere_id' => $request->filiere_id,
             'classe_id'  => $request->classe_id,
             'matricule'  => $request->matricule,
@@ -68,53 +68,52 @@ class InvitationController extends Controller
         ], 201);
     }
 
+    // Format attendu: { emails: ["a@b.com", ...], filiere_id: 1, classe_id: 2 }
     public function bulkInvite(Request $request)
     {
         $request->validate([
-            'invitations'              => 'required|array|min:1',
-            'invitations.*.email'      => 'required|email',
-            'invitations.*.nom'        => 'required|string',
-            'invitations.*.filiere_id' => 'required|exists:filieres,id',
-            'invitations.*.classe_id'  => 'required|exists:classes,id',
+            'emails'     => 'required|array|min:1',
+            'emails.*'   => 'required|email',
+            'filiere_id' => 'required|exists:filieres,id',
+            'classe_id'  => 'required|exists:classes,id',
         ]);
 
-        $results = [];
-        foreach ($request->invitations as $inv) {
+        $sent = 0;
+
+        foreach ($request->emails as $email) {
             $tempPassword = Str::random(10);
             $token = Str::random(64);
+            $nom = explode('@', $email)[0];
 
             User::updateOrCreate(
-                ['email' => $inv['email']],
+                ['email' => $email],
                 [
-                    'name'       => $inv['nom'],
+                    'name'       => $nom,
                     'password'   => Hash::make($tempPassword),
                     'role'       => 'student',
-                    'filiere_id' => $inv['filiere_id'],
-                    'classe_id'  => $inv['classe_id'],
-                    'matricule'  => $inv['matricule'] ?? null,
+                    'filiere_id' => $request->filiere_id,
+                    'classe_id'  => $request->classe_id,
                     'is_active'  => true,
                 ]
             );
 
             $invitation = Invitation::create([
-                'email'      => $inv['email'],
+                'email'      => $email,
                 'token'      => $token,
-                'nom'        => $inv['nom'],
-                'filiere_id' => $inv['filiere_id'],
-                'classe_id'  => $inv['classe_id'],
+                'nom'        => $nom,
+                'filiere_id' => $request->filiere_id,
+                'classe_id'  => $request->classe_id,
                 'expires_at' => now()->addDays(7),
                 'created_by' => $request->user()->id,
             ]);
 
             try {
-                Mail::to($inv['email'])->send(new InvitationMail($invitation, $tempPassword));
-                $results[] = ['email' => $inv['email'], 'status' => 'sent'];
-            } catch (\Exception $e) {
-                $results[] = ['email' => $inv['email'], 'status' => 'error'];
-            }
+                Mail::to($email)->send(new InvitationMail($invitation, $tempPassword));
+                $sent++;
+            } catch (\Exception $e) {}
         }
 
-        return response()->json(['results' => $results]);
+        return response()->json(['sent' => $sent, 'total' => count($request->emails)]);
     }
 
     public function resend(Invitation $invitation)

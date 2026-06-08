@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClasseController;
 use App\Http\Controllers\Api\ClasseMatiereProfController;
@@ -58,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Students management
         Route::get('/admin/students', [StudentController::class, 'index']);
         Route::get('/admin/students/{user}', [StudentController::class, 'show']);
+        Route::delete('/admin/students/{user}', [StudentController::class, 'destroy']);
 
         // Invitations
         Route::get('/invitations', [InvitationController::class, 'index']);
@@ -102,8 +104,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/evaluations/formation', [EvaluationFormationController::class, 'index']);
         Route::get('/evaluations/formation/stats', [EvaluationFormationController::class, 'globalStats']);
 
+        // Admin users management
+        Route::get('/admin/admins', [AdminUserController::class, 'index']);
+        Route::post('/admin/admins', [AdminUserController::class, 'store']);
+        Route::put('/admin/admins/{user}', [AdminUserController::class, 'update']);
+        Route::delete('/admin/admins/{user}', [AdminUserController::class, 'destroy']);
+
         // PDF Exports
         Route::get('/export/filiere/{id}', [ExportController::class, 'exportFiliere']);
         Route::get('/export/classe/{id}', [ExportController::class, 'exportClasse']);
+
+        // Réinitialisation annuelle
+        Route::delete('/admin/reset-evals', [AdminController::class, 'resetEvals']);
     });
 });

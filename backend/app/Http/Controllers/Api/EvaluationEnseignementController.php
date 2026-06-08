@@ -31,29 +31,38 @@ class EvaluationEnseignementController extends Controller
 
     public function store(Request $request)
     {
+        // Accepte soit cmp_id (cours avec prof), soit matiere_id (matière sans prof)
         $data = $request->validate([
-            'cmp_id'     => 'required|exists:classe_matiere_professeur,id',
-            'q1'         => 'nullable|in:A,B,C',
-            'q2'         => 'nullable|in:A,B,C',
-            'q3'         => 'nullable|in:A,B,C',
-            'q4'         => 'nullable|in:A,B,C',
-            'q5'         => 'nullable|in:A,B,C',
-            'q6'         => 'nullable|in:A,B,C',
-            'q7'         => 'nullable|in:A,B,C',
-            'q8'         => 'nullable|in:A,B,C',
-            'q9'         => 'nullable|in:A,B,C',
-            'q10'        => 'nullable|in:A,B,C',
-            'commentaire'=> 'nullable|string|max:1000',
+            'cmp_id'      => 'nullable|exists:classe_matiere_professeur,id',
+            'matiere_id'  => 'nullable|exists:matieres,id',
+            'q1'          => 'nullable|in:A,B,C',
+            'q2'          => 'nullable|in:A,B,C',
+            'q3'          => 'nullable|in:A,B,C',
+            'q4'          => 'nullable|in:A,B,C',
+            'q5'          => 'nullable|in:A,B,C',
+            'q6'          => 'nullable|in:A,B,C',
+            'q7'          => 'nullable|in:A,B,C',
+            'q8'          => 'nullable|in:A,B,C',
+            'q9'          => 'nullable|in:A,B,C',
+            'q10'         => 'nullable|in:A,B,C',
+            'commentaire' => 'nullable|string|max:1000',
         ]);
+
+        if (empty($data['cmp_id']) && empty($data['matiere_id'])) {
+            return response()->json(['message' => 'cmp_id ou matiere_id requis.'], 422);
+        }
 
         $data['etudiant_id'] = $request->user()->id;
 
-        $existing = EvaluationEnseignement::where([
-            'etudiant_id' => $data['etudiant_id'],
-            'cmp_id'      => $data['cmp_id'],
-        ])->first();
+        // Vérifier doublon
+        $query = EvaluationEnseignement::where('etudiant_id', $data['etudiant_id']);
+        if (!empty($data['cmp_id'])) {
+            $query->where('cmp_id', $data['cmp_id']);
+        } else {
+            $query->where('matiere_id', $data['matiere_id'])->whereNull('cmp_id');
+        }
 
-        if ($existing) {
+        if ($query->exists()) {
             return response()->json(['message' => 'Vous avez déjà évalué ce cours.'], 422);
         }
 

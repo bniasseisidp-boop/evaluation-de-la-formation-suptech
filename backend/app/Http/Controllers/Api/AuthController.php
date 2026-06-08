@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,6 +29,9 @@ class AuthController extends Controller
         if (!$user->is_active) {
             return response()->json(['message' => 'Votre compte est désactivé.'], 403);
         }
+
+        // Marquer l'invitation comme utilisée
+        Invitation::where('email', $request->email)->whereNull('used_at')->update(['used_at' => now()]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

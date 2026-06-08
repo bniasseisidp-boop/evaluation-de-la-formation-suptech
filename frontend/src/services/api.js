@@ -83,14 +83,27 @@ export const evaluationAPI = {
   formationStats: (params) => api.get('/evaluations/formation/stats', { params }),
 };
 
+const downloadBlob = (data, filename) => {
+  const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
   filiereReport: (id) => api.get(`/admin/reports/filiere/${id}`),
   classeReport: (id) => api.get(`/admin/reports/classe/${id}`),
   students: (params) => api.get('/admin/students', { params }),
   studentDetail: (id) => api.get(`/admin/students/${id}`),
-  exportFiliere: (id) => window.open(`/api/export/filiere/${id}?token=${localStorage.getItem('token')}`),
-  exportClasse: (id) => window.open(`/api/export/classe/${id}?token=${localStorage.getItem('token')}`),
+  studentDelete: (id) => api.delete(`/admin/students/${id}`),
+  exportFiliere: (id) => api.get(`/export/filiere/${id}`, { responseType: 'blob' })
+    .then(r => downloadBlob(r.data, `rapport_filiere_${id}.pdf`)),
+  exportClasse: (id) => api.get(`/export/classe/${id}`, { responseType: 'blob' })
+    .then(r => downloadBlob(r.data, `rapport_classe_${id}.pdf`)),
+  resetEvals: () => api.delete('/admin/reset-evals'),
 };
 
 export const invitationAPI = {
@@ -103,4 +116,11 @@ export const invitationAPI = {
 
 export const studentAPI = {
   dashboard: () => api.get('/student/dashboard'),
+};
+
+export const adminUserAPI = {
+  list: () => api.get('/admin/admins'),
+  create: (data) => api.post('/admin/admins', data),
+  update: (id, data) => api.put(`/admin/admins/${id}`, data),
+  delete: (id) => api.delete(`/admin/admins/${id}`),
 };

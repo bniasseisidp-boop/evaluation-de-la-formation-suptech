@@ -9,6 +9,7 @@ use App\Models\EvaluationFormation;
 use App\Models\EvaluationQualiteService;
 use App\Models\Filiere;
 use App\Models\Invitation;
+use App\Models\Matiere;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -17,42 +18,18 @@ class AdminController extends Controller
     public function dashboard()
     {
         return response()->json([
-            'filieres'         => Filiere::count(),
-            'classes'          => Classe::count(),
-            'etudiants'        => User::where('role', 'student')->count(),
-            'invitations'      => Invitation::count(),
-            'eval_enseignement'=> EvaluationEnseignement::count(),
-            'eval_qualite'     => EvaluationQualiteService::count(),
-            'eval_formation'   => EvaluationFormation::count(),
-            'recent_evals'     => EvaluationEnseignement::with([
-                'etudiant', 'cmp.matiere', 'cmp.professeur',
+            'filieres'          => Filiere::count(),
+            'classes'           => Classe::count(),
+            'etudiants'         => User::where('role', 'student')->count(),
+            'invitations'       => Invitation::count(),
+            'eval_enseignement' => EvaluationEnseignement::count(),
+            'eval_qualite'      => EvaluationQualiteService::count(),
+            'eval_formation'    => EvaluationFormation::count(),
+            'recent_evals'      => EvaluationEnseignement::with([
+                'etudiant', 'cmp.matiere', 'cmp.professeur', 'matiere',
             ])->latest()->take(10)->get(),
-            'filieres_stats'   => $this->getFiliereStats(),
+            'filieres_stats'    => $this->getFiliereStats(),
         ]);
-    }
-
-    private function getFiliereStats(): array
-    {
-        return Filiere::with('classes')->get()->map(function ($filiere) {
-            $etudiantIds = User::where('filiere_id', $filiere->id)
-                ->where('role', 'student')->pluck('id');
-
-            $evalEnsCount = EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)->count();
-            $evalQualCount = EvaluationQualiteService::whereIn('etudiant_id', $etudiantIds)->count();
-            $evalFormCount = EvaluationFormation::whereIn('etudiant_id', $etudiantIds)->count();
-
-            return [
-                'filiere'         => $filiere->nom,
-                'code'            => $filiere->code,
-                'couleur'         => $filiere->couleur,
-                'nb_classes'      => $filiere->classes->count(),
-                'nb_etudiants'    => $etudiantIds->count(),
-                'eval_enseignement' => $evalEnsCount,
-                'eval_qualite'    => $evalQualCount,
-                'eval_formation'  => $evalFormCount,
-                'total_evals'     => $evalEnsCount + $evalQualCount + $evalFormCount,
-            ];
-        })->toArray();
     }
 
     public function filiereReport(int $filiereId)
@@ -63,19 +40,49 @@ class AdminController extends Controller
             'classes.etudiants',
         ])->findOrFail($filiereId);
 
-        $etudiantIds = User::where('filiere_id', $filiereId)
-            ->where('role', 'student')->pluck('id');
+        $allEtudiantIds = User::where('filiere_id', $filiereId)->where('role', 'student')->pluck('id');
 
-        $evalQualStats  = $this->getQualiteStats($etudiantIds);
-        $evalFormStats  = $this->getFormationStats($etudiantIds);
-        $classesDetails = $this->getClassesDetails($filiere->classes);
+        $classesData = $filiere->classes->map(function ($classe) {
+            $etudiantIds = $classe->etudiants->pluck('id');
+            $cmps        = $classe->classeMatiereProfs;
+
+            if ($cmps->isEmpty()) {
+                $matieresList = Matiere::orderBy('nom')->get()->map(function ($m) use ($etudiantIds) {
+                    $evals = EvaluationEnseignement::whereNull('cmp_id')
+                        ->where('matiere_id', $m->id)
+                        ->whereIn('etudiant_id', $etudiantIds)->get();
+                    return $this->buildCmpStats($evals, $m->nom, null);
+                });
+            } else {
+                $matieresList = $cmps->map(function ($cmp) use ($etudiantIds) {
+                    $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
+                        ->whereIn('etudiant_id', $etudiantIds)->get();
+                    $prof = $cmp->professeur
+                        ? trim(($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? ''))
+                        : null;
+                    return $this->buildCmpStats($evals, $cmp->matiere->nom ?? '—', $prof);
+                });
+            }
+
+            $nbEvals = EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)->count();
+
+            return [
+                'nom'            => $classe->nom,
+                'niveau'         => $classe->niveau,
+                'nb_etudiants'   => $etudiantIds->count(),
+                'nb_cmps'        => $matieresList->count(),
+                'nb_evaluations' => $nbEvals,
+                'matieres'       => $matieresList->values(),
+            ];
+        });
 
         return response()->json([
-            'filiere'        => $filiere,
-            'nb_etudiants'   => $etudiantIds->count(),
-            'qualite_stats'  => $evalQualStats,
-            'formation_stats'=> $evalFormStats,
-            'classes'        => $classesDetails,
+            'filiere'         => $filiere,
+            'nb_classes'      => $filiere->classes->count(),
+            'nb_etudiants'    => $allEtudiantIds->count(),
+            'qualite_stats'   => $this->getQualiteStats($allEtudiantIds),
+            'formation_stats' => $this->getFormationStats($allEtudiantIds),
+            'classes'         => $classesData,
         ]);
     }
 
@@ -89,44 +96,97 @@ class AdminController extends Controller
         ])->findOrFail($classeId);
 
         $etudiantIds = $classe->etudiants->pluck('id');
+        $cmps        = $classe->classeMatiereProfs;
 
-        $cmpsWithScores = $classe->classeMatiereProfs->map(function ($cmp) use ($etudiantIds) {
-            $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
-                ->whereIn('etudiant_id', $etudiantIds)->get();
-            $count = $evals->count();
+        if ($cmps->isEmpty()) {
+            $matieresList = Matiere::orderBy('nom')->get()->map(function ($m) use ($etudiantIds) {
+                $evals = EvaluationEnseignement::whereNull('cmp_id')
+                    ->where('matiere_id', $m->id)
+                    ->whereIn('etudiant_id', $etudiantIds)->get();
+                return $this->buildCmpStats($evals, $m->nom, null);
+            });
+        } else {
+            $matieresList = $cmps->map(function ($cmp) use ($etudiantIds) {
+                $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)
+                    ->whereIn('etudiant_id', $etudiantIds)->get();
+                $prof = $cmp->professeur
+                    ? trim(($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? ''))
+                    : null;
+                return $this->buildCmpStats($evals, $cmp->matiere->nom ?? '—', $prof);
+            });
+        }
 
-            $questionStats = [];
-            foreach (range(1, 10) as $i) {
-                $q    = "q$i";
-                $vals = $evals->pluck($q)->filter();
-                $questionStats["q$i"] = [
-                    'A'       => $count > 0 ? round($vals->filter(fn($v) => $v === 'A')->count() / $count * 100, 1) : 0,
-                    'B'       => $count > 0 ? round($vals->filter(fn($v) => $v === 'B')->count() / $count * 100, 1) : 0,
-                    'C'       => $count > 0 ? round($vals->filter(fn($v) => $v === 'C')->count() / $count * 100, 1) : 0,
-                ];
-            }
-
-            $scores = $evals->pluck('score_total')->filter();
-            return [
-                'cmp'          => $cmp,
-                'nb_reponses'  => $count,
-                'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
-                'questions'    => $questionStats,
-                'commentaires' => $evals->pluck('commentaire')->filter()->values(),
-            ];
-        });
+        $nbEvalStudents = $etudiantIds->count() > 0
+            ? EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)
+                ->distinct('etudiant_id')->count('etudiant_id')
+            : 0;
 
         return response()->json([
-            'classe'         => $classe,
-            'nb_etudiants'   => $etudiantIds->count(),
-            'taux_reponse'   => $etudiantIds->count() > 0
-                ? round(
-                    EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)->distinct('etudiant_id')->count('etudiant_id')
-                    / $etudiantIds->count() * 100, 1
-                )
+            'classe'       => $classe,
+            'nb_etudiants' => $etudiantIds->count(),
+            'taux_reponse' => $etudiantIds->count() > 0
+                ? round($nbEvalStudents / $etudiantIds->count() * 100, 1)
                 : 0,
-            'matieres'       => $cmpsWithScores,
+            'matieres'     => $matieresList->values(),
         ]);
+    }
+
+    public function resetEvals()
+    {
+        EvaluationEnseignement::truncate();
+        EvaluationQualiteService::truncate();
+        EvaluationFormation::truncate();
+        // Remettre les invitations en "non utilisé" pour la nouvelle année
+        Invitation::whereNotNull('used_at')->update(['used_at' => null]);
+
+        return response()->json(['message' => 'Toutes les évaluations ont été réinitialisées pour la nouvelle année.']);
+    }
+
+    private function buildCmpStats($evals, string $matiereName, ?string $profName): array
+    {
+        $count = $evals->count();
+        $questions = [];
+        foreach (range(1, 10) as $i) {
+            $q = "q$i";
+            $questions["q$i"] = [
+                'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100, 1) : 0,
+                'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100, 1) : 0,
+                'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100, 1) : 0,
+            ];
+        }
+        $scores = $evals->pluck('score_total')->filter();
+        return [
+            'matiere'      => $matiereName,
+            'professeur'   => $profName,
+            'nb_reponses'  => $count,
+            'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
+            'questions'    => $questions,
+            'commentaires' => $evals->pluck('commentaire')->filter()->values(),
+        ];
+    }
+
+    private function getFiliereStats(): array
+    {
+        return Filiere::with('classes')->get()->map(function ($filiere) {
+            $etudiantIds = User::where('filiere_id', $filiere->id)
+                ->where('role', 'student')->pluck('id');
+
+            $evalEnsCount  = EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)->count();
+            $evalQualCount = EvaluationQualiteService::whereIn('etudiant_id', $etudiantIds)->count();
+            $evalFormCount = EvaluationFormation::whereIn('etudiant_id', $etudiantIds)->count();
+
+            return [
+                'filiere'           => $filiere->nom,
+                'code'              => $filiere->code,
+                'couleur'           => $filiere->couleur,
+                'nb_classes'        => $filiere->classes->count(),
+                'nb_etudiants'      => $etudiantIds->count(),
+                'eval_enseignement' => $evalEnsCount,
+                'eval_qualite'      => $evalQualCount,
+                'eval_formation'    => $evalFormCount,
+                'total_evals'       => $evalEnsCount + $evalQualCount + $evalFormCount,
+            ];
+        })->toArray();
     }
 
     private function getQualiteStats($etudiantIds): array
@@ -135,11 +195,11 @@ class AdminController extends Controller
         $count = $evals->count();
         if ($count === 0) return ['total' => 0];
 
-        $fields = ['secretariat','direction','direction_etudes','documentation',
-                   'salle_pratique','connexion','securite','toilettes','restaurant','cadre_general'];
+        $fields = ['secretariat', 'direction', 'direction_etudes', 'documentation',
+                   'salle_pratique', 'connexion', 'securite', 'toilettes', 'restaurant', 'cadre_general'];
         $stats = ['total' => $count];
         foreach ($fields as $f) {
-            $vals = $evals->pluck($f)->filter();
+            $vals     = $evals->pluck($f)->filter();
             $scoreSum = $vals->sum(fn($v) => EvaluationQualiteService::getScoreLabel($v));
             $stats[$f] = $vals->count() > 0 ? round($scoreSum / $vals->count(), 2) : 0;
         }
@@ -153,32 +213,13 @@ class AdminController extends Controller
         $count = $evals->count();
         if ($count === 0) return ['total' => 0];
 
-        $scoreFields = ['score_motivation','score_objectifs','score_contenu',
-                        'score_techniques','score_exercices','score_formateur_comm','score_formateur_rythme'];
+        $scoreFields = ['score_motivation', 'score_objectifs', 'score_contenu',
+                        'score_techniques', 'score_exercices', 'score_formateur_comm', 'score_formateur_rythme'];
         $stats = ['total' => $count];
         foreach ($scoreFields as $f) {
-            $vals = $evals->pluck($f)->filter();
+            $vals      = $evals->pluck($f)->filter();
             $stats[$f] = $vals->count() > 0 ? round($vals->avg(), 2) : 0;
         }
         return $stats;
-    }
-
-    private function getClassesDetails($classes): array
-    {
-        return $classes->map(function ($classe) {
-            $etudiantIds = $classe->etudiants->pluck('id');
-            $evalCount = EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)->count();
-            $scores = EvaluationEnseignement::whereIn('etudiant_id', $etudiantIds)
-                ->pluck('score_total')->filter();
-
-            return [
-                'id'           => $classe->id,
-                'nom'          => $classe->nom,
-                'niveau'       => $classe->niveau,
-                'nb_etudiants' => $etudiantIds->count(),
-                'nb_evals'     => $evalCount,
-                'score_moyen'  => $scores->count() > 0 ? round($scores->avg(), 1) : 0,
-            ];
-        })->toArray();
     }
 }

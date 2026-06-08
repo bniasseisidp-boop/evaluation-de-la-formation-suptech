@@ -30,7 +30,7 @@ export default function AdminProfesseurs() {
   const [search, setSearch] = useState('');
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
-  const load = () => professeurAPI.list().then(r => setProfs(r.data)).finally(() => setLoading(false));
+  const load = () => professeurAPI.list().then(r => setProfs(r.data)).catch(() => {}).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
   const openAdd = () => { setEditing(null); reset({}); setShowModal(true); };
@@ -61,46 +61,49 @@ export default function AdminProfesseurs() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-white">Professeurs</h1>
-          <p className="text-slate-400 text-sm mt-1">{filtered.length} professeur(s)</p>
+          <h1 className="text-2xl font-black text-slate-900">Professeurs</h1>
+          <p className="text-slate-500 text-sm mt-1">{filtered.length} professeur(s)</p>
         </div>
         <div className="flex gap-3 flex-wrap">
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
-            className="bg-slate-800 border border-white/10 text-slate-300 placeholder-slate-500 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-44" />
-          <button onClick={openAdd} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+            className="bg-white border border-slate-200 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-44 shadow-sm" />
+          <button onClick={openAdd}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
             <Plus className="w-4 h-4" />Ajouter
           </button>
         </div>
       </div>
 
-      {loading ? <div className="flex justify-center py-16"><div className="w-10 h-10 border-4 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" /></div>
+      {loading ? <div className="flex justify-center py-16"><div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></div>
       : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-slate-800/30 rounded-2xl border border-white/10">
-          <UserCheck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">Aucun professeur trouvé.</p>
+        <div className="text-center py-16 bg-slate-50 rounded-2xl border border-slate-200">
+          <UserCheck className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+          <p className="text-slate-500">Aucun professeur trouvé.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.04 * i }}
-              className="bg-slate-800/50 border border-white/10 rounded-xl p-5 card-hover">
+              className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
                   {getInitials(p)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-bold text-sm">{p.prenom} {p.nom}</div>
-                  {p.specialite && <div className="text-slate-400 text-xs mt-0.5 truncate">{p.specialite}</div>}
-                  {p.grade && <div className="mt-1"><span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full">{p.grade}</span></div>}
+                  <div className="text-slate-900 font-bold text-sm">{p.prenom} {p.nom}</div>
+                  {p.specialite && <div className="text-slate-500 text-xs mt-0.5 truncate">{p.specialite}</div>}
+                  {p.grade && <div className="mt-1"><span className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">{p.grade}</span></div>}
                 </div>
               </div>
-              {p.email && <div className="text-slate-500 text-xs mb-4 truncate">✉️ {p.email}</div>}
+              {p.email && <div className="text-slate-400 text-xs mb-4 truncate">✉️ {p.email}</div>}
               <div className="flex gap-2">
-                <button onClick={() => openEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors text-xs font-medium">
+                <button onClick={() => openEdit(p)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-xs font-medium">
                   <Edit2 className="w-3.5 h-3.5" />Modifier
                 </button>
-                <button onClick={() => handleDelete(p)} className="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors">
+                <button onClick={() => handleDelete(p)}
+                  className="px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -146,8 +149,10 @@ export default function AdminProfesseurs() {
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm">Annuler</button>
-                <button type="submit" className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm transition-colors">Annuler</button>
+                <button type="submit"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors">
                   <Save className="w-4 h-4" />{editing ? 'Sauvegarder' : 'Créer'}
                 </button>
               </div>

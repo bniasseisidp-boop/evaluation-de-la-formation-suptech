@@ -53,7 +53,11 @@
           </span>
         </td>
         @foreach(range(1,10) as $i)
-        <td>{{ $m['questions']["q$i"]['C'] ?? 0 }}%</td>
+        @php
+          $qd = $m['questions']["q$i"] ?? ['A'=>0,'B'=>0,'C'=>0];
+          $qscore = round($qd['A']*0.5 + $qd['B']*0.75 + $qd['C']*1.0);
+        @endphp
+        <td class="{{ $qscore >= 75 ? 'score-high' : ($qscore >= 50 ? 'score-med' : ($qscore > 0 ? 'score-low' : '')) }}">{{ $qscore > 0 ? $qscore.'%' : '—' }}</td>
         @endforeach
       </tr>
       @if(!empty($m['commentaires']))

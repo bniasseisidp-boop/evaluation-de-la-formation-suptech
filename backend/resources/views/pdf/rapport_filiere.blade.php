@@ -53,7 +53,7 @@
         @foreach($classe['matieres'] as $m)
         <tr>
           <td><strong>{{ $m['matiere'] }}</strong></td>
-          <td>{{ $m['professeur'] }}</td>
+          <td>{{ $m['professeur'] ?? '—' }}</td>
           <td>{{ $m['nb_reponses'] }}</td>
           <td>
             <span class="{{ $m['score_moyen'] >= 75 ? 'score-high' : ($m['score_moyen'] >= 50 ? 'score-med' : 'score-low') }}">
@@ -61,19 +61,23 @@
             </span>
           </td>
           @foreach(range(1,10) as $i)
-          <td>{{ $m['questions']["q$i"]['C'] ?? 0 }}%</td>
+          @php
+            $qd = $m['questions']["q$i"] ?? ['A'=>0,'B'=>0,'C'=>0];
+            $qscore = round($qd['A']*0.5 + $qd['B']*0.75 + $qd['C']*1.0);
+          @endphp
+          <td class="{{ $qscore >= 75 ? 'score-high' : ($qscore >= 50 ? 'score-med' : ($qscore > 0 ? 'score-low' : '')) }}">{{ $qscore > 0 ? $qscore.'%' : '—' }}</td>
           @endforeach
         </tr>
+        @if(!empty($m['commentaires']))
+        <tr>
+          <td colspan="14" style="font-style:italic; color:#6b7280; font-size:8px; background:#fafafa;">
+            Commentaires : @foreach($m['commentaires'] as $c) • {{ $c }} @endforeach
+          </td>
+        </tr>
+        @endif
         @endforeach
       </tbody>
     </table>
-    @if(!empty($classe['commentaires']))
-      <p style="font-size:9px; color:#374151; margin-bottom:8px;"><strong>Commentaires :</strong>
-        @foreach($classe['commentaires'] as $c)
-          • {{ $c }}&nbsp;
-        @endforeach
-      </p>
-    @endif
   @endforeach
 </div>
 
