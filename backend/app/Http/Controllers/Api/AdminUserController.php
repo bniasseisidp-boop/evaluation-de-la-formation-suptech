@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Mail;
 
 class AdminUserController extends Controller
 {
@@ -35,6 +35,19 @@ class AdminUserController extends Controller
             'role'      => 'admin',
             'is_active' => true,
         ]);
+
+        try {
+            Mail::send('emails.admin_welcome', [
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'password' => $data['password'],
+            ], function ($m) use ($data) {
+                $m->to($data['email'], $data['name'])
+                  ->subject('Votre accès administrateur — ISI SUPTECH');
+            });
+        } catch (\Exception $e) {
+            // Email failure should not block account creation
+        }
 
         return response()->json($admin, 201);
     }
