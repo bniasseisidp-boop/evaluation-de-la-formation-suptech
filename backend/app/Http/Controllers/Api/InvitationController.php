@@ -33,7 +33,13 @@ class InvitationController extends Controller
         $tempPassword = Str::random(10);
         $token = Str::random(64);
 
-        $user = User::updateOrCreate(
+        // Protège les comptes admin existants
+        $existing = User::where('email', $request->email)->first();
+        if ($existing && $existing->role === 'admin') {
+            return response()->json(['message' => 'Cet email appartient à un compte administrateur.'], 422);
+        }
+
+        User::updateOrCreate(
             ['email' => $request->email],
             [
                 'name'       => $request->nom ?? explode('@', $request->email)[0],
@@ -84,6 +90,12 @@ class InvitationController extends Controller
             $tempPassword = Str::random(10);
             $token = Str::random(64);
             $nom = explode('@', $email)[0];
+
+            // Ne jamais écraser un compte admin
+            $existingUser = User::where('email', $email)->first();
+            if ($existingUser && $existingUser->role === 'admin') {
+                continue;
+            }
 
             User::updateOrCreate(
                 ['email' => $email],
