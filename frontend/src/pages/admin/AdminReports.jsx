@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Download, BarChart3, ChevronRight, BookOpen, ChevronDown, ChevronUp, MessageSquare, Users } from 'lucide-react';
+import { FileText, Download, BarChart3, ChevronRight, BookOpen, ChevronDown, ChevronUp, MessageSquare, Users, FileDown } from 'lucide-react';
 import { adminAPI, filiereAPI, classeAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -55,6 +55,19 @@ function QuestionBreakdown({ questions }) {
 
 function MatiereCard({ mat, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [dlProf, setDlProf] = useState(false);
+
+  const handleProfPdf = async (e) => {
+    e.stopPropagation();
+    if (!mat.cmp_id) return;
+    setDlProf(true);
+    try {
+      await adminAPI.exportProfCmp(mat.cmp_id, mat.matiere, mat.professeur || '');
+      toast.success('PDF professeur téléchargé !');
+    } catch { toast.error('Erreur PDF'); }
+    finally { setDlProf(false); }
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
       <button onClick={() => setOpen(o => !o)}
@@ -77,8 +90,17 @@ function MatiereCard({ mat, defaultOpen = false }) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
           <ScoreBadge value={mat.score_moyen} />
+          {mat.cmp_id && (
+            <button onClick={handleProfPdf} disabled={dlProf}
+              title="Télécharger le rapport PDF du professeur"
+              className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors disabled:opacity-40">
+              {dlProf
+                ? <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                : <FileDown className="w-4 h-4" />}
+            </button>
+          )}
           {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </div>
       </button>

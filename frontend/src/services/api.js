@@ -107,6 +107,8 @@ export const adminAPI = {
     .then(r => downloadBlob(r.data, `rapport_classe_${id}.pdf`)),
   exportStudent: (id, name) => api.get(`/export/student/${id}`, { responseType: 'blob' })
     .then(r => downloadBlob(r.data, `rapport_etudiant_${name || id}.pdf`)),
+  exportProfCmp: (cmpId, matiere, classe) => api.get(`/export/prof-cmp/${cmpId}`, { responseType: 'blob' })
+    .then(r => downloadBlob(r.data, `rapport_prof_${matiere || cmpId}_${classe || ''}.pdf`)),
   resetEvals: () => api.delete('/admin/reset-evals'),
 };
 

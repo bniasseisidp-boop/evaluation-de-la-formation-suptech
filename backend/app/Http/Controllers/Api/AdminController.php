@@ -11,8 +11,6 @@ use App\Models\Filiere;
 use App\Models\Invitation;
 use App\Models\Matiere;
 use App\Models\User;
-use Illuminate\Http\Request;
-
 class AdminController extends Controller
 {
     public function dashboard()
@@ -112,7 +110,9 @@ class AdminController extends Controller
                 $prof = $cmp->professeur
                     ? trim(($cmp->professeur->prenom ?? '') . ' ' . ($cmp->professeur->nom ?? ''))
                     : null;
-                return $this->buildCmpStats($evals, $cmp->matiere->nom ?? '—', $prof);
+                $stats = $this->buildCmpStats($evals, $cmp->matiere->nom ?? '—', $prof);
+                $stats['cmp_id'] = $cmp->id;
+                return $stats;
             });
         }
 

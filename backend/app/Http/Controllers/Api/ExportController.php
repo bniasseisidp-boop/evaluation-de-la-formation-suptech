@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classe;
+use App\Models\ClasseMatiereProf;
 use App\Models\EvaluationEnseignement;
 use App\Models\EvaluationFormation;
 use App\Models\EvaluationQualiteService;
@@ -15,7 +16,7 @@ use Illuminate\Http\Request;
 
 class ExportController extends Controller
 {
-    public function exportFiliere(Request $request, int $filiereId)
+    public function exportFiliere(int $filiereId)
     {
         $filiere = Filiere::with([
             'classes.classeMatiereProfs.matiere',
@@ -61,7 +62,7 @@ class ExportController extends Controller
         return $pdf->download('rapport_' . $filiere->code . '_' . date('Y') . '.pdf');
     }
 
-    public function exportClasse(Request $request, int $classeId)
+    public function exportClasse(int $classeId)
     {
         $classe = Classe::with([
             'filiere',
@@ -142,6 +143,43 @@ class ExportController extends Controller
 
         $name = preg_replace('/[^a-z0-9]/i', '_', $user->name);
         return $pdf->download("rapport_etudiant_{$name}.pdf");
+    }
+
+    public function exportProfCmp(ClasseMatiereProf $cmp)
+    {
+        $cmp->load(['professeur', 'matiere', 'classe']);
+
+        $evals = EvaluationEnseignement::with(['etudiant'])
+            ->where('cmp_id', $cmp->id)->get();
+
+        $count = $evals->count();
+        $scores = $evals->pluck('score_total')->filter();
+        $scoreMoyen = $scores->count() > 0 ? round($scores->avg(), 1) : 0;
+
+        $questionsStats = [];
+        foreach (range(1, 10) as $i) {
+            $q = "q$i";
+            $questionsStats[$q] = [
+                'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100) : 0,
+                'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100) : 0,
+                'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100) : 0,
+            ];
+        }
+
+        $pdf = Pdf::loadView('pdf.rapport_prof_cmp', [
+            'cmp'            => $cmp,
+            'evals'          => $evals,
+            'scoreMoyen'     => $scoreMoyen,
+            'questionsStats' => $questionsStats,
+            'count'          => $count,
+            'annee'          => '2025-2026',
+            'generated'      => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        $matiere = preg_replace('/[^a-z0-9]/i', '_', $cmp->matiere->nom ?? 'matiere');
+        $classe  = preg_replace('/[^a-z0-9]/i', '_', $cmp->classe->nom ?? 'classe');
+
+        return $pdf->download("rapport_prof_{$matiere}_{$classe}.pdf");
     }
 
     private function buildStats($evals, string $matiere, string $prof): array

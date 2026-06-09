@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ClasseMatiereProf;
 use App\Models\EvaluationEnseignement;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class EvaluationEnseignementController extends Controller
 {
@@ -31,7 +34,6 @@ class EvaluationEnseignementController extends Controller
 
     public function store(Request $request)
     {
-        // Accepte soit cmp_id (cours avec prof), soit matiere_id (matière sans prof)
         $data = $request->validate([
             'cmp_id'      => 'nullable|exists:classe_matiere_professeur,id',
             'matiere_id'  => 'nullable|exists:matieres,id',
@@ -54,7 +56,6 @@ class EvaluationEnseignementController extends Controller
 
         $data['etudiant_id'] = $request->user()->id;
 
-        // Vérifier doublon
         $query = EvaluationEnseignement::where('etudiant_id', $data['etudiant_id']);
         if (!empty($data['cmp_id'])) {
             $query->where('cmp_id', $data['cmp_id']);
@@ -68,6 +69,11 @@ class EvaluationEnseignementController extends Controller
 
         $eval = EvaluationEnseignement::create($data);
         $eval->update(['score_total' => $eval->calculateScore()]);
+
+        // Auto-notify professor when all students have evaluated
+        if (!empty($data['cmp_id'])) {
+            $this->checkAndNotifyProfesseur($eval);
+        }
 
         return response()->json($eval->load(['cmp.matiere', 'cmp.professeur']), 201);
     }
@@ -90,7 +96,7 @@ class EvaluationEnseignementController extends Controller
         return response()->json($evals);
     }
 
-    public function classeGrid(Request $request, int $classeId)
+    public function classeGrid(int $classeId)
     {
         $cmps = ClasseMatiereProf::with([
             'matiere', 'professeur',
@@ -126,5 +132,72 @@ class EvaluationEnseignementController extends Controller
         });
 
         return response()->json($result);
+    }
+
+    private function checkAndNotifyProfesseur(EvaluationEnseignement $eval): void
+    {
+        try {
+            $cmp = ClasseMatiereProf::with(['professeur', 'matiere', 'classe'])->find($eval->cmp_id);
+            if (!$cmp || !$cmp->professeur || !$cmp->professeur->email) return;
+
+            $totalStudents = User::where('classe_id', $cmp->classe_id)->where('role', 'student')->count();
+            if ($totalStudents === 0) return;
+
+            $totalEvals = EvaluationEnseignement::where('cmp_id', $cmp->id)->count();
+            if ($totalEvals !== $totalStudents) return;
+
+            $this->sendProfesseurReport($cmp);
+        } catch (\Exception $e) {
+            // Silent fail — don't break the evaluation submission
+            \Log::warning('Prof notification failed for CMP ' . $eval->cmp_id . ': ' . $e->getMessage());
+        }
+    }
+
+    private function sendProfesseurReport(ClasseMatiereProf $cmp): void
+    {
+        $evals = EvaluationEnseignement::with(['etudiant'])
+            ->where('cmp_id', $cmp->id)->get();
+
+        $count = $evals->count();
+        $scores = $evals->pluck('score_total')->filter();
+        $scoreMoyen = $scores->count() > 0 ? round($scores->avg(), 1) : 0;
+
+        $questionsStats = [];
+        foreach (range(1, 10) as $i) {
+            $q = "q$i";
+            $questionsStats[$q] = [
+                'A' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'A')->count() / $count * 100) : 0,
+                'B' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'B')->count() / $count * 100) : 0,
+                'C' => $count > 0 ? round($evals->filter(fn($e) => $e->$q === 'C')->count() / $count * 100) : 0,
+            ];
+        }
+
+        $pdfContent = Pdf::loadView('pdf.rapport_prof_cmp', [
+            'cmp'            => $cmp,
+            'evals'          => $evals,
+            'scoreMoyen'     => $scoreMoyen,
+            'questionsStats' => $questionsStats,
+            'count'          => $count,
+            'annee'          => '2025-2026',
+            'generated'      => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape')->output();
+
+        $prof    = $cmp->professeur;
+        $matiere = $cmp->matiere->nom ?? '—';
+        $classe  = $cmp->classe->nom ?? '—';
+        $pdfName = 'rapport_' . preg_replace('/[^a-z0-9]/i', '_', $matiere) . '_' . preg_replace('/[^a-z0-9]/i', '_', $classe) . '.pdf';
+
+        Mail::send('emails.rapport_professeur', [
+            'prof'       => $prof,
+            'cmp'        => $cmp,
+            'matiere'    => $matiere,
+            'classe'     => $classe,
+            'scoreMoyen' => $scoreMoyen,
+            'count'      => $count,
+        ], function ($m) use ($prof, $pdfContent, $pdfName, $matiere, $classe) {
+            $m->to($prof->email, $prof->prenom . ' ' . $prof->nom)
+              ->subject("Résultats de vos évaluations — {$matiere} / {$classe} — ISI SUPTECH")
+              ->attachData($pdfContent, $pdfName, ['mime' => 'application/pdf']);
+        });
     }
 }

@@ -116,6 +116,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/export/filiere/{id}', [ExportController::class, 'exportFiliere']);
         Route::get('/export/classe/{id}', [ExportController::class, 'exportClasse']);
         Route::get('/export/student/{user}', [ExportController::class, 'exportStudent']);
+        Route::get('/export/prof-cmp/{cmp}', [ExportController::class, 'exportProfCmp']);
 
         // Réinitialisation annuelle
         Route::delete('/admin/reset-evals', [AdminController::class, 'resetEvals']);
