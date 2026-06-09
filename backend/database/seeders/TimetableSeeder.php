@@ -409,9 +409,26 @@ class TimetableSeeder extends Seeder
         if (isset($this->matiereCache[$nom])) {
             return $this->matiereCache[$nom];
         }
-        $m = Matiere::firstOrCreate(['nom' => $nom], ['is_active' => true]);
+        $m = Matiere::firstOrCreate(['nom' => $nom], [
+            'code'      => $this->makeCode($nom),
+            'is_active' => true,
+        ]);
         $this->matiereCache[$nom] = $m->id;
         return $m->id;
+    }
+
+    private function makeCode(string $nom): string
+    {
+        $map = [
+            'é'=>'e','è'=>'e','ê'=>'e','ë'=>'e','à'=>'a','â'=>'a','ä'=>'a',
+            'ù'=>'u','û'=>'u','ü'=>'u','î'=>'i','ï'=>'i','ô'=>'o','ö'=>'o',
+            'ç'=>'c','É'=>'E','È'=>'E','Ê'=>'E','À'=>'A','Â'=>'A','Î'=>'I',
+            'Ô'=>'O','Ù'=>'U','Û'=>'U','œ'=>'oe','æ'=>'ae',
+        ];
+        $clean = strtr($nom, $map);
+        $clean = preg_replace('/[^A-Za-z0-9\s]/', '', $clean);
+        $clean = preg_replace('/\s+/', '_', trim($clean));
+        return strtoupper(substr($clean, 0, 30));
     }
 
     private function getProfId(string $email): ?int
