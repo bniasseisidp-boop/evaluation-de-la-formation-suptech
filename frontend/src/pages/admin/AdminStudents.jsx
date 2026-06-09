@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, X, BookOpen, Shield, Star, Mail, GraduationCap, Hash, Calendar, MessageSquare, CheckCircle, Trash2, FileDown } from 'lucide-react';
 import { adminAPI, filiereAPI, classeAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import toast from 'react-hot-toast';
 
 function StudentDetail({ student, onClose, onDelete }) {
   const [detail, setDetail] = useState(null);

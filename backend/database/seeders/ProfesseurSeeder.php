@@ -54,6 +54,20 @@ class ProfesseurSeeder extends Seeder
             ['prenom' => 'ABDOULAYE',              'nom' => 'BARRO',       'email' => 'abdoulayebarro9@gmail.com',                'specialite' => 'MACHINE LEARNING',             'grade' => 'MASTER'],
             ['prenom' => 'MAMADOU',                'nom' => 'TOURE',       'email' => 'mtoure64@yahoo.fr',                        'specialite' => 'STATISTIQUE',                  'grade' => 'MASTER'],
             ['prenom' => 'KHADIDIATOU',            'nom' => 'SAMB',        'email' => 'khadidiatousamb@groupeisi.com',            'specialite' => 'CYBER SECURITE',               'grade' => 'MASTER'],
+            // Professeurs supplémentaires identifiés dans les emplois du temps
+            ['prenom' => 'MOUSTAPHA',              'nom' => 'NIANG',       'email' => 'niang.isi@groupeisi.com',                  'specialite' => 'LEADERSHIP, DEVELOPPEMENT PERSONNEL', 'grade' => 'MASTER'],
+            ['prenom' => 'MAMADOU',                'nom' => 'KEITA',       'email' => 'keita.isi@groupeisi.com',                  'specialite' => 'MATHEMATIQUES, STATISTIQUES',         'grade' => 'MASTER'],
+            ['prenom' => 'BOUBACAR',               'nom' => 'DEME',        'email' => 'deme.isi@groupeisi.com',                   'specialite' => 'COMPTABILITE FINANCIERE',             'grade' => 'MASTER'],
+            ['prenom' => 'MOUSSA',                 'nom' => 'HACHIM',      'email' => 'hachim.isi@groupeisi.com',                 'specialite' => 'ARCHITECTURE ORDINATEURS',            'grade' => 'MASTER'],
+            ['prenom' => 'IBOU',                   'nom' => 'JUNIOR',      'email' => 'junior.isi@groupeisi.com',                 'specialite' => 'DEVELOPPEMENT WEB, PROJET INTEGRE',  'grade' => 'MASTER'],
+            ['prenom' => 'AHMAD',                  'nom' => 'AKRAM',       'email' => 'akram.isi@groupeisi.com',                  'specialite' => 'DEVELOPPEMENT WEB, COACHING ALGO',   'grade' => 'MASTER'],
+            ['prenom' => 'DR',                     'nom' => 'LATYR',       'email' => 'latyr.isi@groupeisi.com',                  'specialite' => 'SUPERVISION SYSTEMES, CLOUD',        'grade' => 'DOCTEUR'],
+            ['prenom' => 'MAMADOU',                'nom' => 'SOUARE',      'email' => 'souare.isi@groupeisi.com',                 'specialite' => 'TOIP, MANAGEMENT',                   'grade' => 'MASTER'],
+            ['prenom' => 'JEAN',                   'nom' => 'PRINCIPE',    'email' => 'principe.isi@groupeisi.com',               'specialite' => 'RESEAUX AVANCES, CCNP',              'grade' => 'MASTER'],
+            ['prenom' => 'IBRAHIMA',               'nom' => 'AW',          'email' => 'aw.isi@groupeisi.com',                     'specialite' => 'VIRTUALISATION, SIG',                'grade' => 'MASTER'],
+            ['prenom' => 'OUMAR',                  'nom' => 'AMOSS',       'email' => 'amoss.isi@groupeisi.com',                  'specialite' => 'ALGORITHMIQUE, RESEAUX',              'grade' => 'MASTER'],
+            ['prenom' => 'JEAN',                   'nom' => 'BA NDAO',     'email' => 'bandao.isi@groupeisi.com',                 'specialite' => 'CONTROLE DE GESTION',                'grade' => 'MASTER'],
+            ['prenom' => 'ADAMA',                  'nom' => 'LOSHIMA',     'email' => 'loshima.isi@groupeisi.com',                'specialite' => 'OUTILS NUMERIQUES IA GENERATIVE',    'grade' => 'MASTER'],
         ];
 
         foreach ($profs as $prof) {
@@ -63,6 +77,6 @@ class ProfesseurSeeder extends Seeder
             );
         }
 
-        $this->command->info('44 professeurs importés avec succès.');
+        $this->command->info('57 professeurs importés avec succès.');
     }
 }
