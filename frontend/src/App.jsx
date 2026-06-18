@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
+import ClasseJoin from './pages/auth/ClasseJoin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminFilieres from './pages/admin/AdminFilieres';
 import AdminClasses from './pages/admin/AdminClasses';
@@ -72,6 +73,8 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/rejoindre" element={<ClasseJoin />} />
+        <Route path="/rejoindre/:token" element={<ClasseJoin />} />
 
         <Route path="/admin" element={<PrivateRoute role="admin"><AdminLayout /></PrivateRoute>}>
           <Route index element={<ErrorBoundary><AdminDashboard /></ErrorBoundary>} />

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClasseController;
 use App\Http\Controllers\Api\ClasseMatiereProfController;
+use App\Http\Controllers\Api\ClasseRegistrationController;
 use App\Http\Controllers\Api\EvaluationEnseignementController;
 use App\Http\Controllers\Api\EvaluationFormationController;
 use App\Http\Controllers\Api\EvaluationQualiteController;
@@ -23,6 +24,11 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/invitation/{token}', [AuthController::class, 'checkInvitation']);
 Route::get('/filieres/public', [FiliereController::class, 'index']);
 Route::get('/classes/public', [ClasseController::class, 'index']);
+
+// Inscription autonome des étudiants (sans invitation)
+Route::get('/register/classe/{token}', [ClasseRegistrationController::class, 'show']);
+Route::post('/register/classe/{token}', [ClasseRegistrationController::class, 'register']);
+Route::post('/register/public', [ClasseRegistrationController::class, 'registerPublic']);
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -120,5 +126,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Réinitialisation annuelle
         Route::delete('/admin/reset-evals', [AdminController::class, 'resetEvals']);
+
+        // Régénérer le lien d'inscription d'une classe
+        Route::post('/admin/classes/{classe}/regenerate-token', [ClasseRegistrationController::class, 'regenerateToken']);
     });
 });

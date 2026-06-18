@@ -9,7 +9,7 @@ class Classe extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['filiere_id', 'nom', 'niveau', 'annee_scolaire', 'effectif', 'is_active'];
+    protected $fillable = ['filiere_id', 'nom', 'niveau', 'annee_scolaire', 'effectif', 'is_active', 'registration_token'];
 
     protected $casts = ['is_active' => 'boolean'];
 

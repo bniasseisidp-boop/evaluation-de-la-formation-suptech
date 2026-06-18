@@ -124,6 +124,15 @@ export const studentAPI = {
   dashboard: () => api.get('/student/dashboard'),
 };
 
+export const registrationAPI = {
+  publicFilieres:  ()           => api.get('/filieres/public'),
+  publicClasses:   (filiereId)  => api.get('/classes/public', { params: { filiere_id: filiereId } }),
+  classeInfo:      (token)      => api.get(`/register/classe/${token}`),
+  registerByToken: (token, data) => api.post(`/register/classe/${token}`, data),
+  registerPublic:  (data)       => api.post('/register/public', data),
+  regenerateToken: (classeId)   => api.post(`/admin/classes/${classeId}/regenerate-token`),
+};
+
 export const adminUserAPI = {
   list: () => api.get('/admin/admins'),
   create: (data) => api.post('/admin/admins', data),

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, Save, Link, Unlink, GraduationCap, ChevronDown, ChevronUp } from 'lucide-react';
-import { classeAPI, filiereAPI, cmpAPI, professeurAPI, matiereAPI } from '../../services/api';
+import { Plus, Edit2, Trash2, X, Save, Link, Unlink, GraduationCap, ChevronDown, ChevronUp, Copy, RefreshCw, ExternalLink } from 'lucide-react';
+import { classeAPI, filiereAPI, cmpAPI, professeurAPI, matiereAPI, registrationAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
+
+const getJoinLink = (token) => {
+  const base = import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+  return `${base}/rejoindre/${token}`;
+};
 
 const NIVEAUX = ['BT1','BT2','BT3','L1','L2','L3','M1','M2','FC_L1','FC_L2','FC_L3'];
 const SEMESTRES = ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'];
@@ -34,6 +39,9 @@ export default function AdminClasses() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCmpModal, setShowCmpModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkClasse, setLinkClasse] = useState(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selectedClasse, setSelectedClasse] = useState(null);
   const [cmps, setCmps] = useState([]);
@@ -105,6 +113,27 @@ export default function AdminClasses() {
     catch { toast.error('Erreur'); }
   };
 
+  const openLinkModal = (c) => { setLinkClasse(c); setShowLinkModal(true); };
+
+  const copyLink = (token) => {
+    navigator.clipboard.writeText(getJoinLink(token))
+      .then(() => toast.success('Lien copié !'))
+      .catch(() => toast.error('Impossible de copier'));
+  };
+
+  const regenerateToken = async () => {
+    if (!linkClasse) return;
+    setRegenerating(true);
+    try {
+      const r = await registrationAPI.regenerateToken(linkClasse.id);
+      const updated = { ...linkClasse, registration_token: r.data.token };
+      setLinkClasse(updated);
+      setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+      toast.success('Lien régénéré !');
+    } catch { toast.error('Erreur lors de la régénération'); }
+    finally { setRegenerating(false); }
+  };
+
   const filtered = filterFiliere ? classes.filter(c => c.filiere_id === parseInt(filterFiliere)) : classes;
 
   return (
@@ -156,6 +185,10 @@ export default function AdminClasses() {
                 <button onClick={() => openCmp(c)}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-xs font-medium">
                   <Link className="w-3.5 h-3.5" />Matières
+                </button>
+                <button onClick={() => openLinkModal(c)} title="Lien d'inscription"
+                  className="px-3 py-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={() => openEdit(c)}
                   className="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
@@ -310,6 +343,63 @@ export default function AdminClasses() {
                   </button>
                 </form>
               </div>
+            </div>
+          </Modal>
+        )}
+        {showLinkModal && linkClasse && (
+          <Modal title={`Lien d'inscription — ${linkClasse.nom}`} onClose={() => setShowLinkModal(false)}>
+            <div className="space-y-5">
+              <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                <p className="text-purple-700 text-xs font-semibold mb-1 uppercase tracking-wide">
+                  Partage ce lien avec les étudiants de cette classe
+                </p>
+                <p className="text-slate-500 text-xs">
+                  Les étudiants pourront créer leur compte directement en cliquant sur ce lien.
+                </p>
+              </div>
+
+              {linkClasse.registration_token ? (
+                <>
+                  <div>
+                    <label className={labelCls}>Lien d'inscription</label>
+                    <div className="flex gap-2">
+                      <input readOnly value={getJoinLink(linkClasse.registration_token)}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 font-mono truncate focus:outline-none" />
+                      <button onClick={() => copyLink(linkClasse.registration_token)}
+                        className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors shrink-0"
+                        title="Copier">
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button onClick={() => copyLink(linkClasse.registration_token)}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-colors shadow-sm">
+                    <Copy className="w-4 h-4" />Copier le lien
+                  </button>
+
+                  <div className="border-t border-slate-100 pt-4">
+                    <p className="text-slate-500 text-xs mb-3">
+                      Régénérer le lien rendra l'ancien lien invalide. À utiliser uniquement si le lien a été partagé par erreur.
+                    </p>
+                    <button onClick={regenerateToken} disabled={regenerating}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-xl text-sm transition-colors disabled:opacity-50">
+                      {regenerating
+                        ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                        : <RefreshCw className="w-4 h-4" />}
+                      Régénérer le lien
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 text-slate-400 text-sm">
+                  Aucun lien généré. Cliquez sur "Régénérer" pour en créer un.
+                  <button onClick={regenerateToken} disabled={regenerating}
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-colors">
+                    <RefreshCw className="w-4 h-4" />Générer le lien
+                  </button>
+                </div>
+              )}
             </div>
           </Modal>
         )}
