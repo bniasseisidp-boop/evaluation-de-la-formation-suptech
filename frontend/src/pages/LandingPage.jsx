@@ -125,11 +125,118 @@ const PARTENAIRES = [
 ];
 
 const TEAM_ADMIN = [
-  { src: '/images/admin/kara_directeur.jpg', nom: 'Directeur Général',       titre: 'Direction ISI SUPTECH' },
-  { src: '/images/admin/mbene-tall.jpg',     nom: 'Responsable Académique',  titre: 'Scolarité & Programmes' },
-  { src: '/images/admin/oumoukhairy.jpg',    nom: 'Coordinatrice',           titre: 'Relations Étudiantes' },
-  { src: '/images/admin/samba.jpg',          nom: 'Responsable Pédagogique', titre: 'Qualité & Évaluation' },
+  { src: '/images/admin/kara_directeur.jpg', nom: 'Directeur Général',       titre: 'Direction',      color: '#3b82f6' },
+  { src: '/images/admin/mbene-tall.jpg',     nom: 'Resp. Académique',        titre: 'Académique',     color: '#22c55e' },
+  { src: '/images/admin/oumoukhairy.jpg',    nom: 'Coordinatrice',           titre: 'Coordination',   color: '#f59e0b' },
+  { src: '/images/admin/samba.jpg',          nom: 'Resp. Pédagogique',       titre: 'Pédagogie',      color: '#a855f7' },
 ];
+
+/* ── Tourbillon orbital ── */
+function TeamOrbit() {
+  const [selected, setSelected] = useState(null);
+  const N = TEAM_ADMIN.length;
+  const RADIUS = 145;
+  const DURATION = 22;
+
+  return (
+    <div className="flex flex-col items-center gap-8">
+      {/* Zone orbite */}
+      <div className="relative" style={{ width: 360, height: 360 }}>
+
+        {/* Anneaux décoratifs */}
+        <motion.div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200/60"
+          animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} />
+        <motion.div className="absolute rounded-full border border-blue-100/50"
+          style={{ inset: 30 }}
+          animate={{ rotate: -360 }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }} />
+
+        {/* Logo ISI au centre */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <motion.div
+            animate={{ scale: [1, 1.06, 1], rotate: [0, 3, -3, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-24 h-24 bg-white rounded-full shadow-xl border-4 border-blue-100 flex items-center justify-center">
+            <img src="/isi-logo.png" alt="ISI" className="w-18 h-18 object-contain p-2" />
+          </motion.div>
+        </div>
+
+        {/* Anneau tournant avec les membres */}
+        <motion.div className="absolute inset-0"
+          animate={{ rotate: 360 }}
+          transition={{ duration: DURATION, repeat: Infinity, ease: 'linear' }}>
+          {TEAM_ADMIN.map((m, i) => {
+            const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
+            const x = Math.cos(angle) * RADIUS;
+            const y = Math.sin(angle) * RADIUS;
+            return (
+              <motion.div key={i}
+                className="absolute cursor-pointer"
+                style={{
+                  top: '50%', left: '50%',
+                  transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+                }}
+                /* counter-rotate pour garder la photo droite */
+                animate={{ rotate: -360 }}
+                transition={{ duration: DURATION, repeat: Infinity, ease: 'linear' }}
+                whileHover={{ scale: 1.18 }}
+                onClick={() => setSelected(selected?.nom === m.nom ? null : m)}>
+                <div className="relative">
+                  {/* Capuche (badge coloré en haut) */}
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-20
+                    text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-md"
+                    style={{ backgroundColor: m.color }}>
+                    {m.titre}
+                  </div>
+                  {/* Photo */}
+                  <motion.div
+                    animate={{ boxShadow: selected?.nom === m.nom
+                      ? [`0 0 0 3px ${m.color}`, `0 0 14px 6px ${m.color}66`, `0 0 0 3px ${m.color}`]
+                      : `0 4px 16px rgba(0,0,0,0.18)` }}
+                    transition={{ duration: 1.4, repeat: selected?.nom === m.nom ? Infinity : 0 }}
+                    className="w-16 h-16 rounded-full overflow-hidden border-3 border-white"
+                    style={{ border: `3px solid ${m.color}` }}>
+                    <img src={m.src} alt={m.nom}
+                      className="w-full h-full object-cover" />
+                  </motion.div>
+                  {/* Nom sous la photo */}
+                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap
+                    text-slate-700 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full shadow-sm">
+                    {m.nom}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </div>
+
+      {/* Fiche du membre sélectionné */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div key={selected.nom}
+            initial={{ opacity: 0, y: 16, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="flex items-center gap-4 bg-white border-2 rounded-2xl px-6 py-4 shadow-lg max-w-xs"
+            style={{ borderColor: selected.color + '50' }}>
+            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2"
+              style={{ borderColor: selected.color }}>
+              <img src={selected.src} alt={selected.nom} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="font-black text-slate-900">{selected.nom}</div>
+              <div className="text-xs font-semibold mt-0.5 px-2 py-0.5 rounded-full inline-block text-white"
+                style={{ backgroundColor: selected.color }}>
+                {selected.titre}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const STATS = [
   { value: '57',   label: 'Professeurs',     emoji: '👨‍🏫', color: '#3b82f6' },
@@ -403,26 +510,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── ÉQUIPE ADMINISTRATIVE ── */}
-      <section className="py-20 bg-white">
+      {/* ── ÉQUIPE ADMINISTRATIVE (tourbillon orbital) ── */}
+      <section className="py-20 bg-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Notre équipe</h2>
-              <p className="text-slate-500 text-lg">Des professionnels dédiés à votre réussite.</p>
+              <p className="text-slate-500 text-lg">Des professionnels dédiés à votre réussite.<br/>
+                <span className="text-sm text-blue-500">Cliquez sur un membre pour le découvrir</span>
+              </p>
             </motion.div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-              {TEAM_ADMIN.map((m, i) => (
-                <motion.div key={i} variants={springIn} className="text-center group cursor-default">
-                  <motion.div whileHover={{ y: -8, scale: 1.04 }} transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                    className="w-28 h-28 mx-auto mb-3 rounded-2xl overflow-hidden shadow-md border-2 border-slate-100 group-hover:border-blue-300 transition-colors group-hover:shadow-xl">
-                    <img src={m.src} alt={m.nom} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </motion.div>
-                  <div className="font-bold text-slate-800 text-sm">{m.nom}</div>
-                  <div className="text-slate-400 text-xs mt-0.5">{m.titre}</div>
-                </motion.div>
-              ))}
-            </div>
+            <motion.div variants={fade} className="flex justify-center">
+              <TeamOrbit />
+            </motion.div>
           </motion.div>
         </div>
       </section>
