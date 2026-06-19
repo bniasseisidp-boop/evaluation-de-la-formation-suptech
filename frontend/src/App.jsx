@@ -16,6 +16,7 @@ import AdminMatieres from './pages/admin/AdminMatieres';
 import AdminStudents from './pages/admin/AdminStudents';
 import AdminInvitations from './pages/admin/AdminInvitations';
 import AdminReports from './pages/admin/AdminReports';
+import AdminEmailsRapports from './pages/admin/AdminEmailsRapports';
 import AdminAdmins from './pages/admin/AdminAdmins';
 import StudentPortal from './pages/student/StudentPortal';
 import EvalEnseignement from './pages/student/EvalEnseignement';
@@ -85,6 +86,7 @@ export default function App() {
           <Route path="students"    element={<ErrorBoundary><AdminStudents /></ErrorBoundary>} />
           <Route path="invitations" element={<ErrorBoundary><AdminInvitations /></ErrorBoundary>} />
           <Route path="reports"     element={<ErrorBoundary><AdminReports /></ErrorBoundary>} />
+          <Route path="emails"      element={<ErrorBoundary><AdminEmailsRapports /></ErrorBoundary>} />
           <Route path="admins"      element={<ErrorBoundary><AdminAdmins /></ErrorBoundary>} />
         </Route>
 

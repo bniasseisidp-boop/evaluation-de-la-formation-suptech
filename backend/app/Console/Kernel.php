@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Vérifie chaque jour à 07h00 si la date planifiée d'envoi est atteinte
+        $schedule->command('emails:send-prof-rapports')->dailyAt('07:00');
     }
 
     /**

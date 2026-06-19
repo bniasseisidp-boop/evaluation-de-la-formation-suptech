@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClasseController;
 use App\Http\Controllers\Api\ClasseMatiereProfController;
 use App\Http\Controllers\Api\ClasseRegistrationController;
+use App\Http\Controllers\Api\EmailRapportController;
 use App\Http\Controllers\Api\EvaluationEnseignementController;
 use App\Http\Controllers\Api\EvaluationFormationController;
 use App\Http\Controllers\Api\EvaluationQualiteController;
@@ -129,5 +130,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Régénérer le lien d'inscription d'une classe
         Route::post('/admin/classes/{classe}/regenerate-token', [ClasseRegistrationController::class, 'regenerateToken']);
+
+        // Envoi planifié des rapports aux professeurs
+        Route::get('/admin/emails/config',       [EmailRapportController::class, 'getConfig']);
+        Route::post('/admin/emails/config',      [EmailRapportController::class, 'saveConfig']);
+        Route::post('/admin/emails/envoyer',     [EmailRapportController::class, 'envoyer']);
+        Route::get('/admin/emails/historique',   [EmailRapportController::class, 'historique']);
     });
 });

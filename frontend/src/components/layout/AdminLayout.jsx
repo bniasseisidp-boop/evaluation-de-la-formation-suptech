@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, BookOpen, Users, GraduationCap, FlaskConical,
-  Mail, BarChart3, LogOut, Menu, X, ChevronRight, ShieldCheck
+  Mail, BarChart3, LogOut, Menu, X, ChevronRight, ShieldCheck, Send
 } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import useAuthStore from '../../store/authStore';
@@ -19,6 +19,7 @@ const NAV = [
   { to: '/admin/students',    icon: Users,           label: 'Étudiants' },
   { to: '/admin/invitations', icon: Mail,            label: 'Invitations' },
   { to: '/admin/reports',     icon: BarChart3,       label: 'Rapports & Exports' },
+  { to: '/admin/emails',      icon: Send,            label: 'Envoi des rapports' },
   { to: '/admin/admins',      icon: ShieldCheck,     label: 'Administrateurs' },
 ];
 
