@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import { Home, Shield, BookOpen, CheckCircle, LogOut, Menu, X, UserCircle } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import useAuthStore from '../../store/authStore';
-import AIAssistant from '../ai/AIAssistant';
 
 const NAV = [
   { to: '/portail',                 icon: Home,        label: 'Tableau de bord',    exact: true },
@@ -121,7 +120,6 @@ export default function StudentLayout() {
         <Outlet />
       </motion.main>
 
-      <AIAssistant />
 
       <footer className="mt-12 py-5 bg-white border-t border-slate-100 text-center">
         <p className="text-xs text-slate-400">

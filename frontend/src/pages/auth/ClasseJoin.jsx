@@ -104,8 +104,9 @@ export default function ClasseJoin() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <img src="/isi-logo.png" alt="ISI SUPTECH" className="h-14 w-auto mx-auto mb-5 object-contain" />
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="w-9 h-9 text-green-600" />
           </div>
           <h2 className="text-2xl font-black text-slate-900 mb-2">Inscription réussie !</h2>
           <p className="text-slate-500 mb-8">Votre compte a été créé. Connectez-vous pour accéder au portail d'évaluation.</p>
@@ -125,9 +126,7 @@ export default function ClasseJoin() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <GraduationCap className="w-8 h-8 text-white" />
-          </div>
+          <img src="/isi-logo.png" alt="ISI SUPTECH" className="h-16 w-auto mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-black text-slate-900">ISI SUPTECH</h1>
           <p className="text-slate-500 text-sm mt-1">Portail d'évaluation de la formation</p>
         </div>
