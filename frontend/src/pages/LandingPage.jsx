@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  GraduationCap, Star, CheckCircle, ArrowRight,
-  BarChart3, Shield, Users, Zap, Heart, ChevronLeft, ChevronRight,
-} from 'lucide-react';
+import { GraduationCap, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 
 const fade    = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } };
@@ -321,16 +318,16 @@ export default function LandingPage() {
             </motion.div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
-                { icon: <Heart className="w-6 h-6" />,      title: "Tu améliores ta formation",     desc: "Tes retours permettent d'identifier ce qui fonctionne et ce qui doit changer." },
-                { icon: <Shield className="w-6 h-6" />,     title: "C'est 100% anonyme",            desc: "Ton identité n'est jamais révélée. Exprime-toi librement." },
-                { icon: <BarChart3 className="w-6 h-6" />,  title: "Les profs s'améliorent",        desc: "Chaque professeur reçoit un rapport détaillé pour progresser." },
-                { icon: <Zap className="w-6 h-6" />,        title: "Rapide et simple",              desc: "10 questions par matière, moins de 5 minutes par prof." },
-                { icon: <CheckCircle className="w-6 h-6" />,title: "Suivi en temps réel",           desc: "Vois quelles matières tu as déjà évaluées depuis ton tableau de bord." },
-                { icon: <Star className="w-6 h-6" />,       title: "Qualité ISI SUPTECH",           desc: "ISI s'engage à agir sur tes retours pour maintenir l'excellence." },
+                { emoji: '❤️',  title: "Tu améliores ta formation",  desc: "Tes retours permettent d'identifier ce qui fonctionne et ce qui doit changer." },
+                { emoji: '🔒',  title: "C'est 100% anonyme",         desc: "Ton identité n'est jamais révélée. Exprime-toi librement." },
+                { emoji: '📈',  title: "Les profs s'améliorent",     desc: "Chaque professeur reçoit un rapport détaillé pour progresser." },
+                { emoji: '⚡',  title: "Rapide et simple",           desc: "10 questions par matière, moins de 5 minutes par prof." },
+                { emoji: '✅',  title: "Suivi en temps réel",        desc: "Vois quelles matières tu as déjà évaluées depuis ton tableau de bord." },
+                { emoji: '🌟',  title: "Qualité ISI SUPTECH",        desc: "ISI s'engage à agir sur tes retours pour maintenir l'excellence." },
               ].map((c, i) => (
                 <motion.div key={i} variants={fade}
                   className="bg-white/10 border border-white/20 rounded-2xl p-6 backdrop-blur-sm hover:bg-white/20 transition-all">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white mb-4">{c.icon}</div>
+                  <div className="text-4xl mb-4">{c.emoji}</div>
                   <h3 className="font-bold text-white mb-2">{c.title}</h3>
                   <p className="text-blue-100 text-sm leading-relaxed">{c.desc}</p>
                 </motion.div>
