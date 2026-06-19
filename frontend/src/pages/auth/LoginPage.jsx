@@ -1,138 +1,68 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, Sparkles, BarChart3, Bot, FileText } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import useAuthStore from '../../store/authStore';
 
-/* ── Matrix canvas (même composant que LandingPage) ── */
-function MatrixCanvas() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const c = ref.current; if (!c) return;
-    const ctx = c.getContext('2d');
-    let id;
-    const resize = () => { c.width = c.offsetWidth; c.height = c.offsetHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-    const CHARS = '0123456789ABCDEF∑∞πISI01GLbt%#';
-    const W = 16;
-    const mkCols = () => Array.from({ length: Math.ceil(c.width / W) + 2 }, () => ({
-      y: Math.random() * -80, speed: 2 + Math.random() * 4.5,
-      color: ['#60a5fa','#38bdf8','#a78bfa','#818cf8','#34d399'][Math.floor(Math.random() * 5)],
-      alpha: 0.15 + Math.random() * 0.45, size: 10 + Math.floor(Math.random() * 5),
-    }));
-    let cols = mkCols(), frame = 0;
-    const draw = () => {
-      ctx.clearRect(0, 0, c.width, c.height);
-      cols.forEach((col, i) => {
-        ctx.globalAlpha = col.alpha;
-        ctx.fillStyle = col.color;
-        ctx.font = `bold ${col.size}px monospace`;
-        ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * W, col.y);
-        col.y += col.speed;
-        if (col.y > c.height + 30) { col.y = -20 - Math.random() * 60; col.speed = 2 + Math.random() * 4.5; }
-      });
-      ctx.globalAlpha = 1;
-      if (++frame % 350 === 0) cols = mkCols();
-      id = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize); };
-  }, []);
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none opacity-50" />;
-}
+/* ── Carousel photos ── */
+const SLIDES = [
+  { src: '/images/vitrines/caroursel_isi_suptech_soutenace.jpg', caption: 'Cérémonies de soutenance — ISI SUPTECH' },
+  { src: '/images/vitrines/etudant_farda.jpeg',                  caption: 'Étudiants actifs au quotidien' },
+  { src: '/images/vitrines/Etudiant_gestion.jpeg',               caption: 'Cours pratiques & encadrement de qualité' },
+];
 
-/* ── Circuit canvas ── */
-function CircuitCanvas() {
-  const ref = useRef(null);
+function PhotoCarousel() {
+  const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const c = ref.current; if (!c) return;
-    const ctx = c.getContext('2d');
-    let id;
-    const resize = () => { c.width = c.offsetWidth; c.height = c.offsetHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-    const GRID = 44;
-    const mkPaths = () => {
-      const rows = Math.ceil(c.height / GRID) + 1, cols = Math.ceil(c.width / GRID) + 1;
-      const out = [];
-      for (let r = 0; r < rows; r++) for (let cl = 0; cl < cols; cl++) {
-        if (Math.random() > 0.6) continue;
-        const dir = Math.random() > 0.5 ? 'h' : 'v';
-        const len = (1 + Math.floor(Math.random() * 3)) * GRID;
-        out.push({ x: cl * GRID, y: r * GRID, dir, len, dot: Math.random() > 0.4, progress: Math.random(), speed: 0.003 + Math.random() * 0.007 });
-      }
-      return out;
-    };
-    let paths = mkPaths();
-    const draw = () => {
-      ctx.clearRect(0, 0, c.width, c.height);
-      paths.forEach(p => {
-        p.progress += p.speed;
-        if (p.progress > 1.3) p.progress = -0.3;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.dir === 'h' ? p.x + p.len : p.x, p.dir === 'v' ? p.y + p.len : p.y);
-        ctx.strokeStyle = 'rgba(96,165,250,0.13)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        const t = Math.max(0, Math.min(1, p.progress));
-        const ex = p.dir === 'h' ? p.x + p.len * t : p.x;
-        const ey = p.dir === 'v' ? p.y + p.len * t : p.y;
-        const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 7);
-        g.addColorStop(0, 'rgba(147,197,253,0.95)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI * 2);
-        ctx.fillStyle = g; ctx.fill();
-        if (p.dot) { ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(96,165,250,0.45)'; ctx.fill(); }
-      });
-      id = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize); };
+    const t = setInterval(() => setIdx(i => (i + 1) % SLIDES.length), 5000);
+    return () => clearInterval(t);
   }, []);
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none opacity-60" />;
-}
-
-/* ── Formes tournantes (vortex léger) ── */
-function Vortex() {
-  const SHAPES = [
-    { w: 420, h: 190, dur: 14, top: '50%', left: '50%', bdr: 'rgba(96,165,250,0.18)',  r: '50%',  dir: 1 },
-    { w: 280, h: 130, dur: 9,  top: '25%', left: '70%', bdr: 'rgba(167,139,250,0.15)', r: '50%',  dir: -1 },
-    { w: 180, h: 180, dur: 6,  top: '75%', left: '25%', bdr: 'rgba(56,189,248,0.15)',  r: '50%',  dir: 1 },
-    { w: 100, h: 100, dur: 4,  top: '20%', left: '15%', bdr: 'rgba(96,165,250,0.18)',  r: '12px', dir: -1 },
-    { w: 70,  h: 70,  dur: 3,  top: '80%', left: '80%', bdr: 'rgba(167,139,250,0.2)',  r: '12px', dir: 1 },
-    { w: 90,  h: 90,  dur: 5,  top: '45%', left: '88%', bdr: 'rgba(52,211,153,0.18)',  r: '8px',  dir: -1 },
-    { w: 110, h: 110, dur: 7,  top: '10%', left: '55%', bdr: 'rgba(251,191,36,0.14)',  r: '8px',  dir: 1, init45: true },
-    { w: 65,  h: 65,  dur: 4,  top: '65%', left: '60%', bdr: 'rgba(96,165,250,0.15)',  r: '8px',  dir: -1, init45: true },
-  ];
+  const prev = () => setIdx(i => (i - 1 + SLIDES.length) % SLIDES.length);
+  const next = () => setIdx(i => (i + 1) % SLIDES.length);
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <style>{`
-        @keyframes lCW  { from{transform:translate(-50%,-50%) rotate(0deg)}   to{transform:translate(-50%,-50%) rotate(360deg)} }
-        @keyframes lCCW { from{transform:translate(-50%,-50%) rotate(0deg)}   to{transform:translate(-50%,-50%) rotate(-360deg)} }
-        @keyframes lDCW { from{transform:translate(-50%,-50%) rotate(45deg)}  to{transform:translate(-50%,-50%) rotate(405deg)} }
-        @keyframes lDCCW{ from{transform:translate(-50%,-50%) rotate(45deg)}  to{transform:translate(-50%,-50%) rotate(-315deg)} }
-      `}</style>
-      {SHAPES.map((s, i) => {
-        const a = s.init45 ? (s.dir > 0 ? 'lDCW' : 'lDCCW') : (s.dir > 0 ? 'lCW' : 'lCCW');
-        return (
-          <div key={i} className="absolute"
-            style={{ width: s.w, height: s.h, top: s.top, left: s.left, border: `1.5px solid ${s.bdr}`, borderRadius: s.r, background: 'transparent', animation: `${a} ${s.dur}s linear infinite` }} />
-        );
-      })}
+    <div className="absolute inset-0">
+      <AnimatePresence mode="wait">
+        <motion.img key={idx} src={SLIDES[idx].src} alt={SLIDES[idx].caption}
+          initial={{ opacity: 0, scale: 1.04 }} animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.8 }}
+          className="w-full h-full object-cover" />
+      </AnimatePresence>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-blue-900/75 to-blue-800/60" />
+      {/* Caption */}
+      <div className="absolute bottom-20 left-0 right-0 flex flex-col items-center gap-3 z-10 px-6">
+        <motion.p key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 0.9, y: 0 }}
+          className="text-white/80 text-xs text-center backdrop-blur-sm bg-black/20 rounded-full px-4 py-1.5">
+          {SLIDES[idx].caption}
+        </motion.p>
+        <div className="flex items-center gap-4">
+          <button onClick={prev} className="w-7 h-7 bg-white/15 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex gap-1.5">
+            {SLIDES.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === idx ? 'bg-white w-6' : 'bg-white/40 w-1.5'}`} />
+            ))}
+          </div>
+          <button onClick={next} className="w-7 h-7 bg-white/15 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-const FEATURES = [
-  { icon: BarChart3, text: 'Évaluez enseignants & formations', color: '#60a5fa' },
-  { icon: Bot,       text: "Guidé par l'IA SUPTECH vocalement", color: '#a78bfa' },
-  { icon: Lock,      text: 'Accès sécurisé sur invitation',    color: '#34d399' },
-  { icon: FileText,  text: 'Export PDF en un clic',            color: '#fbbf24' },
+/* ── Team photos strip ── */
+const TEAM = [
+  { src: '/images/admin/kara_directeur.jpg',  label: 'Direction' },
+  { src: '/images/admin/mbene-tall.jpg',       label: 'Académique' },
+  { src: '/images/admin/oumoukhairy.jpg',      label: 'Coordination' },
+  { src: '/images/membres/cisse.jpeg',         label: 'Enseignant' },
 ];
 
 export default function LoginPage() {
@@ -163,117 +93,95 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
 
-      {/* ══ PANNEAU GAUCHE : WOW sombre + animations ══ */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col"
-        style={{ background: 'linear-gradient(160deg, #0a0f1e 0%, #0d1b3e 45%, #10103a 100%)', minHeight: '100vh' }}>
+      {/* ══ PANNEAU GAUCHE : photo ISI SUPTECH ══ */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col" style={{ minHeight: '100vh' }}>
 
-        <MatrixCanvas />
-        <CircuitCanvas />
-        <Vortex />
+        {/* Photo carousel background */}
+        <PhotoCarousel />
 
-        {/* Glow orbs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <motion.div animate={{ scale: [1,1.3,1], opacity: [0.35,0.65,0.35] }} transition={{ duration: 7, repeat: Infinity }}
-            className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.25), transparent)' }} />
-          <motion.div animate={{ scale: [1,1.2,1], opacity: [0.25,0.45,0.25] }} transition={{ duration: 9, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/3 left-1/4 w-60 h-60 rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.2), transparent)' }} />
-        </div>
-
-        {/* Layout: 3 zones top / center / bottom */}
+        {/* Contenu au-dessus des photos */}
         <div className="relative z-10 flex flex-col h-full py-12 px-10 xl:px-14" style={{ minHeight: '100vh' }}>
 
-          {/* ZONE TOP — logo + badge + titre */}
+          {/* TOP — logo + titre */}
           <div className="flex-shrink-0">
-            {/* Logo avec anneau tournant */}
-            <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 120 }}
-              className="relative inline-flex items-center justify-center mb-7">
-              {/* Anneaux qui tournent */}
-              <div className="absolute w-28 h-28 rounded-full border-2 border-dashed border-blue-400/40"
-                style={{ animation: 'lCW 6s linear infinite' }} />
-              <div className="absolute w-36 h-36 rounded-full border border-blue-300/20"
-                style={{ animation: 'lCCW 10s linear infinite' }} />
-              <div className="absolute w-20 h-20 rounded-full border border-cyan-400/30"
-                style={{ animation: 'lCW 4s linear infinite' }} />
-              {/* Fond blanc arrondi avec glow */}
-              <div className="relative w-16 h-16 rounded-2xl bg-white flex items-center justify-center"
-                style={{ boxShadow: '0 0 30px rgba(96,165,250,0.6), 0 0 60px rgba(96,165,250,0.25)' }}>
-                <img src="/logo.png" alt="ISI" className="w-12 h-12 object-contain" />
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, type: 'spring', stiffness: 120 }}
+              className="mb-7">
+              <div className="w-20 h-20 rounded-2xl bg-white/95 flex items-center justify-center shadow-2xl mb-5"
+                style={{ boxShadow: '0 0 40px rgba(255,255,255,0.25)' }}>
+                <img src="/isi-logo.png" alt="ISI SUPTECH" className="w-16 h-16 object-contain" />
               </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-              className="inline-flex items-center gap-2 bg-blue-500/15 border border-blue-400/30 px-4 py-2 rounded-full mb-6">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}>
+                <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 px-3 py-1.5 rounded-full mb-4">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-white/90 text-xs font-semibold tracking-wide">Plateforme officielle</span>
+                </div>
+                <h1 className="text-5xl xl:text-6xl font-black text-white leading-none mb-2">ISI<br />
+                  <span style={{ color: 'transparent', background: 'linear-gradient(90deg,#93c5fd,#38bdf8)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>SUPTECH</span>
+                </h1>
+                <p className="text-white/65 text-sm leading-relaxed max-w-xs mt-4">
+                  Évaluez vos formations et enseignants de manière <strong className="text-white/85">anonyme</strong> — école d'excellence à Dakar, Sénégal.
+                </p>
               </motion.div>
-              <span className="text-blue-300 text-xs font-black tracking-widest uppercase">Plateforme officielle</span>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
-              <h1 className="text-5xl xl:text-6xl font-black text-white leading-none mb-1">ISI</h1>
-              <h1 className="text-5xl xl:text-6xl font-black leading-none mb-5"
-                style={{ color: 'transparent', background: 'linear-gradient(90deg,#60a5fa,#38bdf8,#a78bfa)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>
-                SUPTECH
-              </h1>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                Évaluez vos formations, enseignants et services avec notre IA intégrée — école d'excellence à Dakar.
-              </p>
             </motion.div>
           </div>
 
-          {/* ZONE MILIEU — features (avec flex-1 pour occuper l'espace) */}
-          <div className="flex-1 flex flex-col justify-center py-8">
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}
-              className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-5">Ce que vous pouvez faire</motion.p>
-            <div className="space-y-3">
-              {FEATURES.map((f, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, x: -28 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.55 + i * 0.1, ease: [0.23,1,0.32,1] }}
-                  whileHover={{ x: 8, scale: 1.02 }}
-                  className="flex items-center gap-4 bg-white/[0.05] border border-white/[0.08] rounded-2xl px-5 py-3.5 backdrop-blur-sm cursor-default group">
-                  <motion.div whileHover={{ rotate: [0,-12,12,0], scale: 1.15 }} transition={{ duration: 0.45 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: f.color + '1a', boxShadow: `0 0 16px ${f.color}35` }}>
-                    <f.icon className="w-5 h-5" style={{ color: f.color }} />
-                  </motion.div>
-                  <span className="text-slate-300 text-sm font-medium group-hover:text-white transition-colors">{f.text}</span>
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                    style={{ background: f.color }} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* ZONE BOTTOM — statistiques + credit */}
-          <div className="flex-shrink-0">
-            {/* Mini stats */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }}
+          {/* MIDDLE — statistiques visuelles */}
+          <div className="flex-1 flex flex-col justify-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
               className="grid grid-cols-3 gap-3 mb-8">
               {[
-                { v: '500+', l: 'Étudiants', c: '#60a5fa' },
-                { v: '50+',  l: 'Profs',     c: '#a78bfa' },
-                { v: '98%',  l: 'Satisf.',   c: '#34d399' },
+                { v: '57',    l: 'Professeurs',  e: '👨‍🏫' },
+                { v: '18',    l: 'Classes',       e: '🏫' },
+                { v: '100%',  l: 'Anonyme',       e: '🔒' },
               ].map((s, i) => (
-                <div key={i} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-3 text-center">
-                  <div className="text-xl font-black" style={{ color: s.c }}>{s.v}</div>
-                  <div className="text-slate-500 text-xs mt-0.5">{s.l}</div>
+                <motion.div key={i} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.1 }}
+                  className="bg-white/10 border border-white/20 rounded-2xl p-4 text-center backdrop-blur-sm">
+                  <div className="text-2xl mb-1">{s.e}</div>
+                  <div className="text-white font-black text-xl">{s.v}</div>
+                  <div className="text-white/55 text-xs mt-0.5">{s.l}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Avantages */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+              className="space-y-2.5">
+              {[
+                { emoji: '⭐', text: 'Évaluations 100% anonymes — exprimez-vous librement' },
+                { emoji: '📊', text: 'Rapports PDF personnalisés envoyés aux professeurs' },
+                { emoji: '🚀', text: 'Accès rapide via lien unique par classe' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/[0.07] border border-white/[0.12] rounded-xl px-4 py-3 backdrop-blur-sm">
+                  <span className="text-lg">{item.emoji}</span>
+                  <span className="text-white/75 text-sm">{item.text}</span>
                 </div>
               ))}
             </motion.div>
-            {/* Credit */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-              className="flex items-center justify-between">
-              <div>
-                <div className="text-slate-600 text-xs">Développé par</div>
-                <div className="text-blue-400 font-black text-sm tracking-widest">MULTI BRAIN TECH</div>
+          </div>
+
+          {/* BOTTOM — équipe + crédit */}
+          <div className="flex-shrink-0 mt-6">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}>
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Notre équipe</p>
+              <div className="flex items-center gap-2">
+                {TEAM.map((m, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden border-2 border-white/30 shadow-md">
+                      <img src={m.src} alt={m.label} className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-white/40 text-[9px]">{m.label}</span>
+                  </div>
+                ))}
+                <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center ml-1">
+                  <span className="text-white/50 text-xs font-bold">+</span>
+                </div>
               </div>
-              <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
-                <Lock className="w-4 h-4 text-blue-400" />
-              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+              className="mt-4">
+              <div className="text-white/30 text-[10px]">Développé par</div>
+              <div className="text-blue-300 font-black text-sm tracking-widest">MULTI BRAIN TECH</div>
             </motion.div>
           </div>
         </div>
@@ -282,54 +190,22 @@ export default function LoginPage() {
       {/* ══ PANNEAU DROIT : formulaire ══ */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white relative overflow-hidden min-h-screen px-4">
 
-        {/* ── Fond animé professionnel ── */}
+        {/* Fond subtil */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Grille de points subtile */}
-          <div className="absolute inset-0 opacity-[0.045]"
+          <div className="absolute inset-0 opacity-[0.04]"
             style={{ backgroundImage: 'radial-gradient(circle, #2563eb 1.2px, transparent 1.2px)', backgroundSize: '28px 28px' }} />
-
-          {/* Grand orbe haut-droite */}
-          <motion.div animate={{ scale: [1,1.5,1], x: [0,25,0], opacity: [0.7,1,0.7] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          <motion.div animate={{ scale: [1,1.5,1], opacity: [0.7,1,0.7] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.10) 0%, transparent 65%)' }} />
-          {/* Orbe bas-gauche */}
-          <motion.div animate={{ scale: [1,1.4,1], y: [0,20,0], opacity: [0.6,1,0.6] }}
-            transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 65%)' }} />
+          <motion.div animate={{ scale: [1,1.4,1], y: [0,20,0] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
             className="absolute -bottom-32 -left-32 w-[420px] h-[420px] rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.09) 0%, transparent 65%)' }} />
-          {/* Orbe centre */}
-          <motion.div animate={{ scale: [1,1.6,1], opacity: [0.25,0.5,0.25] }}
-            transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 65%)' }} />
-
-          {/* Ellipse tournante principale */}
-          <div className="absolute w-80 h-36 rounded-full border-2 border-blue-200/35"
-            style={{ top: '50%', left: '50%', animation: 'lCW 22s linear infinite' }} />
-          {/* Cercle moyen */}
-          <div className="absolute w-52 h-52 rounded-full border border-cyan-200/30"
-            style={{ top: '15%', right: '5%', animation: 'lCCW 16s linear infinite' }} />
-          {/* Petit carré */}
-          <div className="absolute w-24 h-24 border-2 border-violet-200/35"
-            style={{ bottom: '18%', left: '6%', borderRadius: '14px', animation: 'lDCW 9s linear infinite' }} />
-          {/* Losange */}
-          <div className="absolute w-16 h-16 border border-blue-300/30"
-            style={{ top: '22%', left: '10%', borderRadius: '6px', animation: 'lDCCW 7s linear infinite' }} />
-          {/* Tout petit carré coin bas-droit */}
-          <div className="absolute w-10 h-10 border border-cyan-300/25"
-            style={{ bottom: '30%', right: '8%', borderRadius: '6px', animation: 'lCW 5s linear infinite' }} />
-
-          {/* Ligne décorative gauche */}
-          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-blue-300/30 to-transparent" />
-          {/* Ligne décorative haut */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-300/20 to-transparent" />
+            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 65%)' }} />
         </div>
 
-        {/* Logo mobile */}
+        {/* Logo mobile uniquement */}
         <div className="lg:hidden w-full max-w-md mb-6 flex items-center gap-2.5">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="ISI" className="h-10 w-auto object-contain" />
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/isi-logo.png" alt="ISI SUPTECH" className="h-12 w-auto object-contain" />
             <div>
               <div className="font-black text-slate-900 text-sm leading-tight">ISI / SUPTECH</div>
               <div className="text-blue-600 text-[10px] font-bold">Évaluation des Formations</div>
@@ -340,7 +216,7 @@ export default function LoginPage() {
         {/* Formulaire */}
         <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="w-full max-w-md">
+          className="w-full max-w-md relative z-10">
 
           <div className="mb-8">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
@@ -401,9 +277,8 @@ export default function LoginPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Forgot password */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-              className="text-right -mt-1">
+            {/* Forgot */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-right -mt-1">
               <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700 text-xs font-medium transition-colors">
                 Mot de passe oublié ?
               </Link>
@@ -431,7 +306,7 @@ export default function LoginPage() {
             </motion.div>
           </form>
 
-          {/* Info invitation */}
+          {/* Info */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
             className="mt-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div className="w-7 h-7 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -443,10 +318,19 @@ export default function LoginPage() {
             </p>
           </motion.div>
 
+          {/* Lien retour */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
             className="mt-6 text-center">
             <Link to="/" className="text-slate-400 hover:text-blue-600 text-sm transition-colors font-medium inline-flex items-center gap-1.5">
               ← Retour à l'accueil
+            </Link>
+          </motion.div>
+
+          {/* Lien rejoindre (mobile) */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
+            className="mt-3 text-center lg:hidden">
+            <Link to="/rejoindre" className="text-blue-600 hover:text-blue-700 text-sm transition-colors font-medium">
+              Pas encore inscrit ? Rejoindre une classe →
             </Link>
           </motion.div>
         </motion.div>
