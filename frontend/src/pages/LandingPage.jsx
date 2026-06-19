@@ -125,20 +125,29 @@ const PARTENAIRES = [
 ];
 
 const TEAM_ADMIN = [
-  { src: '/images/admin/kara_directeur.jpg', nom: 'Directeur Général',       titre: 'Direction',      color: '#3b82f6' },
-  { src: '/images/admin/mbene-tall.jpg',     nom: 'Resp. Académique',        titre: 'Académique',     color: '#22c55e' },
-  { src: '/images/admin/oumoukhairy.jpg',    nom: 'Coordinatrice',           titre: 'Coordination',   color: '#f59e0b' },
-  { src: '/images/admin/samba.jpg',          nom: 'Resp. Pédagogique',       titre: 'Pédagogie',      color: '#a855f7' },
+  { src: '/images/admin/kara_directeur.jpg', nom: 'Directeur Général',  titre: 'Direction',    color: '#3b82f6' },
+  { src: '/images/admin/mbene-tall.jpg',     nom: 'Resp. Académique',   titre: 'Académique',   color: '#22c55e' },
+  { src: '/images/admin/oumoukhairy.jpg',    nom: 'Coordinatrice',      titre: 'Coordination', color: '#f59e0b' },
+  { src: '/images/admin/samba.jpg',          nom: 'Resp. Pédagogique',  titre: 'Pédagogie',    color: '#a855f7' },
+];
+
+const TEAM_PROFS = [
+  { src: '/images/membres/cisse.jpeg',    nom: 'M. CISSE',   titre: 'Marketing',         color: '#ef4444' },
+  { src: '/images/membres/junior.jpeg',   nom: 'M. JUNIOR',  titre: 'Développement Web', color: '#06b6d4' },
+  { src: '/images/membres/mr_robert.jpeg',nom: 'M. ROBERT',  titre: 'PHP & SGF',         color: '#8b5cf6' },
 ];
 
 /* ── Tourbillon orbital ── */
 function TeamOrbit() {
   const [selected, setSelected] = useState(null);
-  const paused = !!selected;
-  const N     = TEAM_ADMIN.length;
-  const R     = 190;
-  const SIZE  = 500;
-  const SPEED = 10;
+  const paused  = !!selected;
+  const N       = TEAM_ADMIN.length;
+  const NP      = TEAM_PROFS.length;
+  const R       = 165;   // rayon anneau admin (interne)
+  const RP      = 270;   // rayon anneau profs (externe)
+  const SIZE    = 620;
+  const SPEED   = 10;    // admin : 10s/tour
+  const SPEEDP  = 14;    // profs : 14s/tour sens inverse
 
   const open  = (m) => setSelected(m);
   const close = ()  => setSelected(null);
@@ -150,137 +159,155 @@ function TeamOrbit() {
         @keyframes orb-ccw  { from{transform:rotate(0deg)}  to{transform:rotate(-360deg)} }
         @keyframes isi-pulse{ 0%,100%{box-shadow:0 0 0 6px #dbeafe,0 8px 32px rgba(59,130,246,.22)}
                               50%{box-shadow:0 0 0 14px #bfdbfe,0 14px 44px rgba(59,130,246,.38)} }
-        @keyframes pop-in   { from{opacity:0;transform:translate(-50%,-50%) scale(.5)}
-                              to  {opacity:1;transform:translate(-50%,-50%) scale(1)}  }
-        .orb-ring  { animation: orb-cw  ${SPEED}s linear infinite;      animation-play-state: var(--op); }
-        .orb-slow  { animation: orb-ccw ${SPEED*3}s linear infinite;    animation-play-state: var(--op); }
-        .orb-mid   { animation: orb-cw  ${SPEED*2}s linear infinite;    animation-play-state: var(--op); }
-        .orb-ccw   { animation: orb-ccw ${SPEED}s linear infinite;      animation-play-state: var(--op); }
-        .isi-pulse { animation: isi-pulse 3s ease-in-out infinite; }
-        .member-pop{ animation: pop-in .35s cubic-bezier(.34,1.56,.64,1) forwards; }
+        .orb-admin  { animation: orb-cw   ${SPEED}s  linear infinite; animation-play-state:var(--op); }
+        .orb-profs  { animation: orb-ccw  ${SPEEDP}s linear infinite; animation-play-state:var(--op); }
+        .orb-dec1   { animation: orb-ccw  ${SPEED*3}s linear infinite; animation-play-state:var(--op); }
+        .orb-dec2   { animation: orb-cw   ${SPEED*2}s linear infinite; animation-play-state:var(--op); }
+        .cnt-admin  { animation: orb-ccw  ${SPEED}s  linear infinite; animation-play-state:var(--op); }
+        .cnt-profs  { animation: orb-cw   ${SPEEDP}s linear infinite; animation-play-state:var(--op); }
+        .isi-pulse  { animation: isi-pulse 3s ease-in-out infinite; }
       `}</style>
 
-      {/* Container orbit */}
+      {/* Container */}
       <div style={{ position:'relative', width:SIZE, height:SIZE, '--op': paused ? 'paused' : 'running' }}>
 
         {/* Anneaux décoratifs */}
-        <div className="orb-slow" style={{ position:'absolute', inset:8, borderRadius:'50%', border:'2px dashed rgba(59,130,246,0.22)' }} />
-        <div className="orb-mid"  style={{ position:'absolute', inset:55, borderRadius:'50%', border:'1.5px solid rgba(99,102,241,0.15)' }} />
-        <div className="orb-slow" style={{ position:'absolute', inset:105, borderRadius:'50%', border:'1px solid rgba(59,130,246,0.10)' }} />
+        <div className="orb-dec1" style={{ position:'absolute', inset:4,  borderRadius:'50%', border:'2px dashed rgba(59,130,246,0.18)' }} />
+        <div className="orb-dec2" style={{ position:'absolute', inset:60, borderRadius:'50%', border:'1.5px solid rgba(99,102,241,0.12)' }} />
+        <div className="orb-dec1" style={{ position:'absolute', inset:120,borderRadius:'50%', border:'1px solid rgba(59,130,246,0.09)' }} />
 
-        {/* ── Centre : logo OU présentation du membre ── */}
-        <AnimatePresence mode="wait">
-          {!selected ? (
-            /* Logo ISI */
-            <motion.div key="logo"
-              initial={{ opacity:0, scale:.7 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0, scale:.6 }}
-              transition={{ duration:.3 }}
-              className="isi-pulse"
-              style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-                       width:100, height:100, background:'white', borderRadius:'50%',
-                       display:'flex', alignItems:'center', justifyContent:'center', zIndex:30 }}>
-              <img src="/isi-logo.png" alt="ISI" style={{ width:76, height:76, objectFit:'contain', padding:4 }} />
-            </motion.div>
-          ) : (
-            /* Présentation du membre cliqué */
-            <motion.div key={selected.nom}
-              initial={{ opacity:0, scale:.55 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0, scale:.6 }}
-              transition={{ type:'spring', stiffness:300, damping:22 }}
-              style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-                       width:160, zIndex:30, textAlign:'center' }}>
+        {/* ── Centre : wrapper fixe (positionnement ≠ animation) ── */}
+        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:30 }}>
+          <AnimatePresence mode="wait">
+            {!selected ? (
+              <motion.div key="logo"
+                initial={{ opacity:0, scale:.7 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0, scale:.6 }}
+                transition={{ duration:.3 }}
+                className="isi-pulse"
+                style={{ width:106, height:106, background:'white', borderRadius:'50%',
+                         display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src="/isi-logo.png" alt="ISI" style={{ width:80, height:80, objectFit:'contain', padding:4 }} />
+              </motion.div>
+            ) : (
+              <motion.div key={selected.nom}
+                initial={{ opacity:0, scale:.5 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0, scale:.5 }}
+                transition={{ type:'spring', stiffness:300, damping:22 }}
+                style={{ width:170, textAlign:'center' }}>
+                <div style={{ width:104, height:104, borderRadius:'50%', overflow:'hidden', margin:'0 auto 8px',
+                              border:`4px solid ${selected.color}`,
+                              boxShadow:`0 0 0 4px white, 0 8px 32px ${selected.color}66` }}>
+                  <img src={selected.src} alt={selected.nom} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                </div>
+                <div style={{ fontWeight:900, color:'#0f172a', fontSize:13, marginBottom:5 }}>{selected.nom}</div>
+                <div style={{ display:'inline-block', backgroundColor:selected.color, color:'white',
+                              fontSize:10, fontWeight:800, padding:'3px 12px', borderRadius:20,
+                              boxShadow:`0 3px 10px ${selected.color}55`, marginBottom:10 }}>
+                  {selected.titre}
+                </div>
+                <div>
+                  <button onClick={close}
+                    style={{ background:'#f1f5f9', border:'none', cursor:'pointer', borderRadius:20,
+                             fontSize:11, fontWeight:700, color:'#64748b', padding:'5px 14px',
+                             boxShadow:'0 2px 8px rgba(0,0,0,0.1)', transition:'background .15s' }}
+                    onMouseEnter={e=>e.currentTarget.style.background='#e2e8f0'}
+                    onMouseLeave={e=>e.currentTarget.style.background='#f1f5f9'}>
+                    ✕ Fermer
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-              {/* Grande photo */}
-              <div style={{ width:100, height:100, borderRadius:'50%', overflow:'hidden', margin:'0 auto 8px',
-                            border:`4px solid ${selected.color}`,
-                            boxShadow:`0 0 0 4px white, 0 8px 30px ${selected.color}66` }}>
-                <img src={selected.src} alt={selected.nom} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-              </div>
-
-              {/* Nom */}
-              <div style={{ fontWeight:900, color:'#0f172a', fontSize:13, lineHeight:1.2, marginBottom:5 }}>
-                {selected.nom}
-              </div>
-
-              {/* Badge titre */}
-              <div style={{ display:'inline-block', backgroundColor:selected.color, color:'white',
-                            fontSize:10, fontWeight:800, padding:'3px 12px', borderRadius:20,
-                            boxShadow:`0 3px 10px ${selected.color}55`, marginBottom:10 }}>
-                {selected.titre}
-              </div>
-
-              {/* Bouton fermer */}
-              <div>
-                <button onClick={close}
-                  style={{ background:'#f1f5f9', border:'none', cursor:'pointer', borderRadius:20,
-                           fontSize:11, fontWeight:700, color:'#64748b', padding:'5px 14px',
-                           boxShadow:'0 2px 8px rgba(0,0,0,0.1)', transition:'background .15s' }}
-                  onMouseEnter={e=>e.currentTarget.style.background='#e2e8f0'}
-                  onMouseLeave={e=>e.currentTarget.style.background='#f1f5f9'}>
-                  ✕ Fermer
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Anneau orbital */}
-        <div className="orb-ring" style={{ position:'absolute', inset:0 }}>
+        {/* ── Anneau ADMIN (interne, CW) ── */}
+        <div className="orb-admin" style={{ position:'absolute', inset:0 }}>
           {TEAM_ADMIN.map((m, i) => {
-            const angleDeg = (i / N) * 360;
+            const a = (i / N) * 360;
             const isActive = selected?.nom === m.nom;
             return (
               <div key={i} style={{
                 position:'absolute', top:'50%', left:'50%',
-                transform:`rotate(${angleDeg}deg) translate(${R}px) rotate(-${angleDeg}deg) translate(-50%,-50%)`,
+                transform:`rotate(${a}deg) translate(${R}px) rotate(-${a}deg) translate(-50%,-50%)`,
                 zIndex:20,
               }}>
-                <div className="orb-ccw" style={{ cursor:'pointer' }} onClick={() => open(m)}>
+                <div className="cnt-admin" style={{ cursor:'pointer' }} onClick={() => open(m)}>
                   <div style={{ position:'relative', display:'inline-block' }}>
-
-                    {/* Capuche */}
-                    <div style={{
-                      position:'absolute', bottom:'100%', left:'50%',
-                      transform:'translateX(-50%) translateY(-5px)',
-                      backgroundColor: m.color, color:'white',
-                      fontSize:10, fontWeight:900, padding:'3px 11px', borderRadius:20,
-                      whiteSpace:'nowrap', boxShadow:`0 3px 10px ${m.color}55`, zIndex:40,
-                    }}>{m.titre}</div>
-
-                    {/* Photo */}
-                    <div style={{
-                      width:72, height:72, borderRadius:'50%', overflow:'hidden',
-                      border: isActive ? `4px solid ${m.color}` : `3px solid ${m.color}`,
-                      boxShadow: isActive
-                        ? `0 0 0 3px white, 0 0 20px 6px ${m.color}88`
-                        : `0 0 0 3px white, 0 4px 16px ${m.color}44`,
-                      transition:'all .25s',
-                      transform: isActive ? 'scale(1.12)' : 'scale(1)',
-                    }}
-                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform='scale(1.12)'; }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.transform='scale(1)'; }}>
+                    <div style={{ position:'absolute', bottom:'100%', left:'50%',
+                                  transform:'translateX(-50%) translateY(-5px)',
+                                  backgroundColor:m.color, color:'white',
+                                  fontSize:10, fontWeight:900, padding:'3px 10px', borderRadius:20,
+                                  whiteSpace:'nowrap', boxShadow:`0 3px 10px ${m.color}55`, zIndex:40 }}>
+                      {m.titre}
+                    </div>
+                    <div style={{ width:68, height:68, borderRadius:'50%', overflow:'hidden',
+                                  border: isActive ? `4px solid ${m.color}` : `3px solid ${m.color}`,
+                                  boxShadow: isActive ? `0 0 0 3px white,0 0 20px 6px ${m.color}88` : `0 0 0 3px white,0 4px 16px ${m.color}44`,
+                                  transition:'all .25s', transform: isActive ? 'scale(1.14)' : 'scale(1)' }}
+                      onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.transform='scale(1.12)'; }}
+                      onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.transform='scale(1)'; }}>
                       <img src={m.src} alt={m.nom} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                     </div>
-
-                    {/* Nom */}
-                    <div style={{
-                      position:'absolute', top:'100%', left:'50%',
-                      transform:'translateX(-50%) translateY(7px)',
-                      background:'white', color:'#1e293b',
-                      fontSize:10, fontWeight:700, padding:'2px 9px',
-                      borderRadius:20, whiteSpace:'nowrap',
-                      boxShadow:'0 2px 8px rgba(0,0,0,0.12)',
-                    }}>{m.nom}</div>
+                    <div style={{ position:'absolute', top:'100%', left:'50%',
+                                  transform:'translateX(-50%) translateY(7px)',
+                                  background:'white', color:'#1e293b', fontSize:10, fontWeight:700,
+                                  padding:'2px 9px', borderRadius:20, whiteSpace:'nowrap',
+                                  boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>{m.nom}</div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* ── Anneau PROFS (externe, CCW) ── */}
+        <div className="orb-profs" style={{ position:'absolute', inset:0 }}>
+          {TEAM_PROFS.map((m, i) => {
+            const a = (i / NP) * 360;
+            const isActive = selected?.nom === m.nom;
+            return (
+              <div key={i} style={{
+                position:'absolute', top:'50%', left:'50%',
+                transform:`rotate(${a}deg) translate(${RP}px) rotate(-${a}deg) translate(-50%,-50%)`,
+                zIndex:20,
+              }}>
+                <div className="cnt-profs" style={{ cursor:'pointer' }} onClick={() => open(m)}>
+                  <div style={{ position:'relative', display:'inline-block' }}>
+                    <div style={{ position:'absolute', bottom:'100%', left:'50%',
+                                  transform:'translateX(-50%) translateY(-5px)',
+                                  backgroundColor:m.color, color:'white',
+                                  fontSize:10, fontWeight:900, padding:'3px 10px', borderRadius:20,
+                                  whiteSpace:'nowrap', boxShadow:`0 3px 10px ${m.color}55`, zIndex:40 }}>
+                      {m.titre}
+                    </div>
+                    <div style={{ width:68, height:68, borderRadius:'50%', overflow:'hidden',
+                                  border: isActive ? `4px solid ${m.color}` : `3px solid ${m.color}`,
+                                  boxShadow: isActive ? `0 0 0 3px white,0 0 20px 6px ${m.color}88` : `0 0 0 3px white,0 4px 16px ${m.color}44`,
+                                  transition:'all .25s', transform: isActive ? 'scale(1.14)' : 'scale(1)' }}
+                      onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.transform='scale(1.12)'; }}
+                      onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.transform='scale(1)'; }}>
+                      <img src={m.src} alt={m.nom} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    </div>
+                    <div style={{ position:'absolute', top:'100%', left:'50%',
+                                  transform:'translateX(-50%) translateY(7px)',
+                                  background:'white', color:'#1e293b', fontSize:10, fontWeight:700,
+                                  padding:'2px 9px', borderRadius:20, whiteSpace:'nowrap',
+                                  boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>{m.nom}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
 
-      {/* Hint */}
-      <p className="text-slate-400 text-sm">
-        {paused ? '▶ Cliquez sur "Fermer" pour reprendre la rotation' : 'Cliquez sur un membre pour en savoir plus'}
+      {/* Légende */}
+      <div className="flex items-center gap-6 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block"/>Administration</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block"/>Corps professoral</span>
+      </div>
+      <p className="text-slate-400 text-sm -mt-3">
+        {paused ? '▶ Cliquez sur "Fermer" pour reprendre' : 'Cliquez sur un membre pour en savoir plus'}
       </p>
     </div>
   );
@@ -563,10 +590,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Notre équipe</h2>
-              <p className="text-slate-500 text-lg">Des professionnels dédiés à votre réussite.<br/>
-                <span className="text-sm text-blue-500">Cliquez sur un membre pour le découvrir</span>
-              </p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Notre équipe & Corps professoral</h2>
+              <p className="text-slate-500 text-lg">Administration au centre · Professeurs en orbite externe</p>
             </motion.div>
             <motion.div variants={fade} className="flex justify-center">
               <TeamOrbit />
