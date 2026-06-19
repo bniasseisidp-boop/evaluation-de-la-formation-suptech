@@ -134,102 +134,143 @@ const TEAM_ADMIN = [
 /* ── Tourbillon orbital ── */
 function TeamOrbit() {
   const [selected, setSelected] = useState(null);
-  const N = TEAM_ADMIN.length;
-  const RADIUS = 145;
-  const DURATION = 22;
+  const N      = TEAM_ADMIN.length;
+  const R      = 190;   // rayon de l'orbite
+  const SIZE   = 500;   // taille du conteneur
+  const SPEED  = 10;    // secondes par tour (rapide)
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Zone orbite */}
-      <div className="relative" style={{ width: 360, height: 360 }}>
+      <style>{`
+        @keyframes orb-cw  { from{transform:rotate(0deg)}   to{transform:rotate(360deg)}  }
+        @keyframes orb-ccw { from{transform:rotate(0deg)}   to{transform:rotate(-360deg)} }
+        @keyframes isi-pulse{ 0%,100%{box-shadow:0 0 0 6px #dbeafe,0 8px 32px rgba(59,130,246,.22)}
+                              50%{box-shadow:0 0 0 12px #bfdbfe,0 12px 40px rgba(59,130,246,.35)} }
+        .orbit-ring  { animation: orb-cw  ${SPEED}s linear infinite; }
+        .orbit-slow  { animation: orb-ccw ${SPEED * 3}s linear infinite; }
+        .orbit-mid   { animation: orb-cw  ${SPEED * 2}s linear infinite; }
+        .counter-rot { animation: orb-ccw ${SPEED}s linear infinite; }
+        .isi-center  { animation: isi-pulse 3s ease-in-out infinite; }
+      `}</style>
+
+      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
 
         {/* Anneaux décoratifs */}
-        <motion.div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200/60"
-          animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} />
-        <motion.div className="absolute rounded-full border border-blue-100/50"
-          style={{ inset: 30 }}
-          animate={{ rotate: -360 }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }} />
+        <div className="orbit-slow" style={{
+          position: 'absolute', inset: 8, borderRadius: '50%',
+          border: '2px dashed rgba(59,130,246,0.22)',
+        }} />
+        <div className="orbit-mid" style={{
+          position: 'absolute', inset: 60, borderRadius: '50%',
+          border: '1.5px solid rgba(99,102,241,0.15)',
+        }} />
+        <div className="orbit-slow" style={{
+          position: 'absolute', inset: 110, borderRadius: '50%',
+          border: '1px solid rgba(59,130,246,0.10)',
+        }} />
 
-        {/* Logo ISI au centre */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <motion.div
-            animate={{ scale: [1, 1.06, 1], rotate: [0, 3, -3, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-24 h-24 bg-white rounded-full shadow-xl border-4 border-blue-100 flex items-center justify-center">
-            <img src="/isi-logo.png" alt="ISI" className="w-18 h-18 object-contain p-2" />
-          </motion.div>
+        {/* Logo ISI au centre (fixe, z-index élevé) */}
+        <div className="isi-center" style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 100, height: 100,
+          background: 'white', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 30,
+        }}>
+          <img src="/isi-logo.png" alt="ISI SUPTECH"
+            style={{ width: 76, height: 76, objectFit: 'contain', padding: 4 }} />
         </div>
 
-        {/* Anneau tournant avec les membres */}
-        <motion.div className="absolute inset-0"
-          animate={{ rotate: 360 }}
-          transition={{ duration: DURATION, repeat: Infinity, ease: 'linear' }}>
+        {/* Anneau orbital — tourne en CW */}
+        <div className="orbit-ring" style={{ position: 'absolute', inset: 0 }}>
           {TEAM_ADMIN.map((m, i) => {
-            const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
-            const x = Math.cos(angle) * RADIUS;
-            const y = Math.sin(angle) * RADIUS;
+            /* Placement initial sur le cercle :
+               rotate(angle) translate(R) → item à position angle sur orbite
+               rotate(-angle) → annule la rotation propre de l'item (photo droite)
+               translate(-50%,-50%) → centre la photo sur le point */
+            const angleDeg = (i / N) * 360;
             return (
-              <motion.div key={i}
-                className="absolute cursor-pointer"
-                style={{
-                  top: '50%', left: '50%',
-                  transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
-                }}
-                /* counter-rotate pour garder la photo droite */
-                animate={{ rotate: -360 }}
-                transition={{ duration: DURATION, repeat: Infinity, ease: 'linear' }}
-                whileHover={{ scale: 1.18 }}
-                onClick={() => setSelected(selected?.nom === m.nom ? null : m)}>
-                <div className="relative">
-                  {/* Capuche (badge coloré en haut) */}
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-20
-                    text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-md"
-                    style={{ backgroundColor: m.color }}>
-                    {m.titre}
-                  </div>
-                  {/* Photo */}
-                  <motion.div
-                    animate={{ boxShadow: selected?.nom === m.nom
-                      ? [`0 0 0 3px ${m.color}`, `0 0 14px 6px ${m.color}66`, `0 0 0 3px ${m.color}`]
-                      : `0 4px 16px rgba(0,0,0,0.18)` }}
-                    transition={{ duration: 1.4, repeat: selected?.nom === m.nom ? Infinity : 0 }}
-                    className="w-16 h-16 rounded-full overflow-hidden border-3 border-white"
-                    style={{ border: `3px solid ${m.color}` }}>
-                    <img src={m.src} alt={m.nom}
-                      className="w-full h-full object-cover" />
-                  </motion.div>
-                  {/* Nom sous la photo */}
-                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap
-                    text-slate-700 text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded-full shadow-sm">
-                    {m.nom}
+              <div key={i} style={{
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: `rotate(${angleDeg}deg) translate(${R}px) rotate(-${angleDeg}deg) translate(-50%,-50%)`,
+                zIndex: 20,
+              }}>
+                {/* Counter-rotation = photo reste droite pendant que l'orbite tourne */}
+                <div className="counter-rot" style={{ cursor: 'pointer' }}
+                  onClick={() => setSelected(selected?.nom === m.nom ? null : m)}>
+
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    {/* ── Capuche (badge en haut) ── */}
+                    <div style={{
+                      position: 'absolute', bottom: '100%', left: '50%',
+                      transform: 'translateX(-50%) translateY(-5px)',
+                      backgroundColor: m.color, color: 'white',
+                      fontSize: 10, fontWeight: 900, letterSpacing: '0.03em',
+                      padding: '3px 11px', borderRadius: 20,
+                      whiteSpace: 'nowrap',
+                      boxShadow: `0 3px 10px ${m.color}66`,
+                      zIndex: 40,
+                    }}>{m.titre}</div>
+
+                    {/* Photo */}
+                    <div style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: `3px solid ${m.color}`,
+                      boxShadow: `0 0 0 3px white, 0 4px 20px ${m.color}55`,
+                      transition: 'transform .2s',
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                      <img src={m.src} alt={m.nom}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+
+                    {/* Nom sous la photo */}
+                    <div style={{
+                      position: 'absolute', top: '100%', left: '50%',
+                      transform: 'translateX(-50%) translateY(7px)',
+                      background: 'white', color: '#1e293b',
+                      fontSize: 10, fontWeight: 700,
+                      padding: '2px 9px', borderRadius: 20,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    }}>{m.nom}</div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
       </div>
 
       {/* Fiche du membre sélectionné */}
       <AnimatePresence>
         {selected && (
           <motion.div key={selected.nom}
-            initial={{ opacity: 0, y: 16, scale: 0.92 }}
+            initial={{ opacity: 0, y: 14, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="flex items-center gap-4 bg-white border-2 rounded-2xl px-6 py-4 shadow-lg max-w-xs"
-            style={{ borderColor: selected.color + '50' }}>
-            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2"
-              style={{ borderColor: selected.color }}>
-              <img src={selected.src} alt={selected.nom} className="w-full h-full object-cover" />
+            exit={{ opacity: 0, y: 8, scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+            className="flex items-center gap-4 bg-white rounded-2xl px-6 py-4 shadow-xl border-2"
+            style={{ borderColor: selected.color + '55', maxWidth: 320 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 14, overflow: 'hidden',
+              border: `2px solid ${selected.color}`, flexShrink: 0,
+            }}>
+              <img src={selected.src} alt={selected.nom}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <div>
-              <div className="font-black text-slate-900">{selected.nom}</div>
-              <div className="text-xs font-semibold mt-0.5 px-2 py-0.5 rounded-full inline-block text-white"
-                style={{ backgroundColor: selected.color }}>
-                {selected.titre}
-              </div>
+              <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 15 }}>{selected.nom}</div>
+              <div style={{
+                marginTop: 5, display: 'inline-block',
+                backgroundColor: selected.color, color: 'white',
+                fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 20,
+              }}>{selected.titre}</div>
             </div>
           </motion.div>
         )}
