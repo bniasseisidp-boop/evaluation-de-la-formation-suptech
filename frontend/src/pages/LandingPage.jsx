@@ -279,15 +279,6 @@ function HeroSection(){
         <Carousel images={VITRINES} className="w-full h-full" interval={5000}/>
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/92 via-blue-800/78 to-blue-900/65"/>
       </motion.div>
-      <motion.div className="absolute inset-0" style={{opacity:vortexO}}><VortexCanvas opacity={1}/></motion.div>
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{y:[0,-30,0],scale:[1,1.15,1]}} transition={{duration:8,repeat:Infinity,ease:'easeInOut'}}
-          className="absolute -top-20 -right-20 w-[450px] h-[450px] rounded-full opacity-30"
-          style={{background:'radial-gradient(circle,rgba(6,182,212,.5),transparent)'}}/>
-        <motion.div animate={{y:[0,25,0],scale:[1,1.2,1]}} transition={{duration:11,repeat:Infinity,delay:3}}
-          className="absolute bottom-0 -left-16 w-[380px] h-[380px] rounded-full opacity-25"
-          style={{background:'radial-gradient(circle,rgba(168,85,247,.5),transparent)'}}/>
-      </div>
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-24 w-full">
         <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-2xl">
           <motion.div variants={fade}>
@@ -371,26 +362,15 @@ export default function LandingPage(){
       {/* ─── HERO ─── */}
       <HeroSection/>
 
-      {/* ─── STATS — dark + vortex + count-up ─── */}
+      {/* ─── STATS ─── */}
       <section id="accueil" className="py-16 relative overflow-hidden" style={{background:DARK_BG}}>
-        <VortexCanvas opacity={.45}/>
-        <FloatOrbs orbs={[
-          {size:360,x:'-5%',y:'-30%',col:'rgba(37,99,235,.22)',anim:{scale:[1,1.3,1],y:[0,-20,0]},tr:{duration:9}},
-          {size:280,x:'75%',y:'20%', col:'rgba(124,58,237,.2)',anim:{scale:[1,1.2,1],x:[0,15,0]},tr:{duration:11,delay:3}},
-        ]}/>
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-          <motion.div animate={{rotate:360}} transition={{duration:30,repeat:Infinity,ease:'linear'}}
-            className="w-[500px] h-[500px] rounded-full border border-blue-500/10"/>
-          <motion.div className="absolute" animate={{rotate:-360}} transition={{duration:22,repeat:Infinity,ease:'linear'}}
-            style={{width:380,height:380,borderRadius:'50%',border:'1px dashed rgba(139,92,246,.15)'}}/>
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true,margin:'-60px'}} variants={stagger}
             className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {STATS.map((s,i)=>(
               <motion.div key={i} variants={fade3d} transition={{delay:i*.12,type:'spring',stiffness:180,damping:18}}>
                 <Card3D className="text-center rounded-2xl p-6 cursor-default border"
-                  style={{background:'rgba(255,255,255,.06)',borderColor:'rgba(255,255,255,.1)',backdropFilter:'blur(10px)'}}>
+                  style={{background:'rgba(255,255,255,.05)',borderColor:'rgba(255,255,255,.1)'}}>
                   <motion.div className="text-4xl mb-3" animate={{y:[0,-7,0]}} transition={{duration:2.8,repeat:Infinity,ease:'easeInOut',delay:i*.4}}>{s.icon}</motion.div>
                   <div className="text-3xl font-black mb-0.5" style={{color:s.color}}><CountUp to={s.to} suffix={s.suffix}/></div>
                   <div className="text-white font-semibold text-sm mb-1">{s.label}</div>
@@ -402,21 +382,9 @@ export default function LandingPage(){
         </div>
       </section>
 
-      {/* ─── COMMENT ÇA MARCHE — dark + vortex + 3D ─── */}
-      <section className="py-20 relative overflow-hidden" style={{background:'linear-gradient(135deg,#0a0f1e 0%,#1e3a8a 55%,#0c1a38 100%)'}}>
-        <VortexCanvas opacity={.35}/>
-        <FloatOrbs orbs={[
-          {size:420,x:'60%',y:'-20%',col:'rgba(6,182,212,.2)',  anim:{scale:[1,1.35,1],y:[0,-20,0]},tr:{duration:10}},
-          {size:300,x:'-5%',y:'50%', col:'rgba(168,85,247,.18)',anim:{scale:[1,1.25,1],x:[0,15,0]},tr:{duration:12,delay:3}},
-        ]}/>
-        {/* Anneaux CSS */}
-        <div className="absolute inset-0 pointer-events-none">
-          <motion.div animate={{rotate:360}} transition={{duration:45,repeat:Infinity,ease:'linear'}}
-            className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full" style={{border:'1.5px dashed rgba(59,130,246,.12)'}}/>
-          <motion.div animate={{rotate:-360}} transition={{duration:60,repeat:Infinity,ease:'linear'}}
-            className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full" style={{border:'1px solid rgba(139,92,246,.1)'}}/>
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto px-4">
+      {/* ─── COMMENT ÇA MARCHE ─── */}
+      <section className="py-20 relative overflow-hidden" style={{background:'linear-gradient(160deg,#0a1628 0%,#0d2044 100%)'}}>
+        <div className="max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true,margin:'-60px'}} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-14">
               <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-black px-4 py-1.5 rounded-full mb-4 uppercase tracking-widest">
@@ -447,14 +415,8 @@ export default function LandingPage(){
         </div>
       </section>
 
-      {/* ─── FILIÈRES — dark + vortex + cartes colorées ─── */}
-      <section id="filieres" className="py-20 relative overflow-hidden" style={{background:'linear-gradient(135deg,#0f0a2e 0%,#1a0b3e 50%,#0c1433 100%)'}}>
-        <VortexCanvas opacity={.38}/>
-        <FloatOrbs orbs={[
-          {size:400,x:'-8%',y:'-15%',col:'rgba(168,85,247,.22)',anim:{scale:[1,1.3,1],y:[0,-15,0]},tr:{duration:10}},
-          {size:350,x:'70%',y:'50%', col:'rgba(59,130,246,.18)', anim:{scale:[1,1.25,1],x:[0,18,0]},tr:{duration:13,delay:4}},
-          {size:250,x:'40%',y:'-5%', col:'rgba(6,182,212,.15)',  anim:{scale:[1,1.2,1]},tr:{duration:8,delay:2}},
-        ]}/>
+      {/* ─── FILIÈRES ─── */}
+      <section id="filieres" className="py-20 relative overflow-hidden" style={{background:'linear-gradient(160deg,#0c0a1e 0%,#160d35 100%)'}}>
         <div className="relative z-10 max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true,margin:'-60px'}} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-14">
@@ -514,9 +476,8 @@ export default function LandingPage(){
         </div>
       </section>
 
-      {/* ─── ÉQUIPE ORBIT — légèrement sombre pour que l'orbite reste lisible ─── */}
-      <section id="equipe" className="py-20 overflow-hidden relative" style={{background:'linear-gradient(135deg,#0d1533 0%,#172554 50%,#0d1533 100%)'}}>
-        <VortexCanvas opacity={.2}/>
+      {/* ─── ÉQUIPE ORBIT ─── */}
+      <section id="equipe" className="py-20 overflow-hidden relative" style={{background:'linear-gradient(160deg,#0a1628 0%,#0d2044 100%)'}}>
         <div className="relative z-10 max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true}} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-12">
@@ -562,14 +523,9 @@ export default function LandingPage(){
         </div>
       </section>
 
-      {/* ─── POURQUOI ÉVALUER — dark bleu + vortex ─── */}
-      <section className="py-20 relative overflow-hidden text-white" style={{background:'linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 45%,#0e7490 100%)'}}>
-        <VortexCanvas opacity={.5}/>
-        <FloatOrbs orbs={[
-          {size:400,x:'-5%',y:'-20%',col:'rgba(6,182,212,.38)',  anim:{scale:[1,1.4,1],y:[0,-20,0]},tr:{duration:10}},
-          {size:320,x:'80%',y:'40%', col:'rgba(168,85,247,.32)', anim:{scale:[1,1.3,1],x:[0,15,0]},tr:{duration:13,delay:4}},
-        ]}/>
-        <div className="relative z-10 max-w-6xl mx-auto px-4">
+      {/* ─── POURQUOI ÉVALUER ─── */}
+      <section className="py-20 relative overflow-hidden text-white" style={{background:'linear-gradient(160deg,#0c0a1e 0%,#160d35 100%)'}}>
+        <div className="max-w-6xl mx-auto px-4">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true,margin:'-60px'}} variants={stagger}>
             <motion.div variants={fade} className="text-center mb-12">
               <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-white text-xs font-black px-4 py-1.5 rounded-full mb-4 uppercase tracking-widest">
@@ -598,10 +554,9 @@ export default function LandingPage(){
         </div>
       </section>
 
-      {/* ─── CTA FINAL — dark ─── */}
+      {/* ─── CTA FINAL ─── */}
       <section className="py-20 relative overflow-hidden" style={{background:DARK_BG}}>
-        <VortexCanvas opacity={.25}/>
-        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center">
+        <div className="max-w-2xl mx-auto px-4 text-center">
           <motion.div initial="hidden" whileInView="show" viewport={{once:true}} variants={stagger}>
             <motion.div variants={springIn}>
               <motion.img src="/isi-logo.png" alt="ISI SUPTECH"
@@ -630,8 +585,7 @@ export default function LandingPage(){
 
       {/* ─── FOOTER RICHE ─── */}
       <footer className="relative overflow-hidden border-t border-white/[0.06]" style={{background:'linear-gradient(160deg,#020817 0%,#0d1b3e 60%,#10083a 100%)'}}>
-        <VortexCanvas opacity={.18}/>
-        <div className="relative z-10">
+        <div>
           <div className="max-w-6xl mx-auto px-4 pt-16 pb-10">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
               <div className="lg:col-span-2">
