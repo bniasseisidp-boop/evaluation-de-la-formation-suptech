@@ -9,6 +9,7 @@ use App\Models\Parametre;
 use App\Models\ProfEmailLog;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class EmailRapportController extends Controller
@@ -33,13 +34,23 @@ class EmailRapportController extends Controller
     // POST /admin/emails/envoyer
     public function envoyer(Request $request)
     {
-        $force = $request->boolean('force', false);
-        $sent  = $this->sendAllRapports($force);
-        Parametre::set('email_rapport_last_sent_at', now()->toDateTimeString());
-        return response()->json([
-            'sent'    => $sent,
-            'message' => "{$sent} email(s) envoyé(s) avec succès.",
-        ]);
+        try {
+            $force = $request->boolean('force', false);
+            $result = $this->sendAllRapports($force);
+            Parametre::set('email_rapport_last_sent_at', now()->toDateTimeString());
+            return response()->json([
+                'sent'    => $result['sent'],
+                'errors'  => $result['errors'],
+                'message' => $result['sent'] > 0
+                    ? "{$result['sent']} email(s) envoyé(s) avec succès."
+                    : "Aucun email envoyé. " . ($result['errors'] ? implode('; ', array_slice($result['errors'], 0, 2)) : "Aucun professeur éligible."),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('EmailRapport::envoyer error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'message' => 'Erreur serveur : ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     // GET /admin/emails/historique
@@ -55,9 +66,8 @@ class EmailRapportController extends Controller
     }
 
     // ── Logique d'envoi ────────────────────────────────────────────────────
-    public function sendAllRapports(bool $force = false): int
+    public function sendAllRapports(bool $force = false): array
     {
-        // IDs de CMPs déjà envoyés cette année (pour éviter les doublons si pas force)
         $alreadySent = $force ? collect() : ProfEmailLog::where('annee_scolaire', '2025-2026')
             ->pluck('cmp_id');
 
@@ -68,7 +78,8 @@ class EmailRapportController extends Controller
             ->when(!$force, fn($q) => $q->whereNotIn('id', $alreadySent))
             ->get();
 
-        $sent = 0;
+        $sent   = 0;
+        $errors = [];
 
         foreach ($cmps as $cmp) {
             $evals = EvaluationEnseignement::where('cmp_id', $cmp->id)->get();
@@ -127,11 +138,16 @@ class EmailRapportController extends Controller
                 ]);
 
                 $sent++;
+
             } catch (\Exception $e) {
-                // Email non envoyé, on continue avec les autres
+                $prof    = $cmp->professeur;
+                $matiere = $cmp->matiere->nom ?? '—';
+                $msg = "[{$prof->email} / {$matiere}] " . $e->getMessage();
+                Log::error('EmailRapport send error: ' . $msg);
+                $errors[] = $msg;
             }
         }
 
-        return $sent;
+        return ['sent' => $sent, 'errors' => $errors];
     }
 }

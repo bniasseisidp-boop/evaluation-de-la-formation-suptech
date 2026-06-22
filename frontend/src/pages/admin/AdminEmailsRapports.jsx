@@ -46,10 +46,18 @@ export default function AdminEmailsRapports() {
     setShowConfirm(false);
     try {
       const r = await api.post('/admin/emails/envoyer', { force });
-      toast.success(r.data.message);
+      if (r.data.sent > 0) {
+        toast.success(r.data.message);
+      } else {
+        toast.error(r.data.message || 'Aucun email envoyé.');
+      }
+      if (r.data.errors?.length > 0) {
+        r.data.errors.slice(0, 3).forEach(e => toast.error(e, { duration: 6000 }));
+      }
       fetchAll();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de l\'envoi');
+      const msg = err.response?.data?.message || 'Erreur serveur lors de l\'envoi.';
+      toast.error(msg, { duration: 8000 });
     } finally { setSending(false); }
   };
 

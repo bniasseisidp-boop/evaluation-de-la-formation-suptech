@@ -22,13 +22,14 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #f8fafc;
+  background: #020817;
   color: #1e293b;
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
+  background: #020817;
 }
 
 /* Custom scrollbar */
